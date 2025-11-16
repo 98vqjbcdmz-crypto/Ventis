@@ -22,17 +22,6 @@
       border-radius: 8px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.08);
     }
-    button {
-      margin-top: 8px;
-      padding: 8px 16px;
-      border-radius: 4px;
-      border: none;
-      cursor: pointer;
-      font-weight: 600;
-    }
-    button:hover {
-      filter: brightness(0.95);
-    }
     #status {
       margin-top: 8px;
       font-size: 0.9rem;
@@ -92,10 +81,10 @@
   <div class="container">
     <h1>Vent & vagues – Observations + Prévisions</h1>
     <p>
-      • 🔎Observations<br>
-      • 🔮Prévisions <strong>hourly</strong><br>
-      • 🕺🏻Vitesse en <strong>nœuds</strong>, vent affiché en <strong>SSE ↗</strong> (provenance + flèche)<br>
-      • 🌊Vagues (hauteur & période) via API marine Open-Meteo (prévisions uniquement)
+      • Observations vent via <strong>minutely_15</strong> (toutes les 15 min)<br>
+      • Prévisions vent via <strong>hourly</strong><br>
+      • Vitesse en <strong>nœuds</strong>, vent affiché en <strong>SSE ↗</strong> (provenance + flèche)<br>
+      • Vagues (hauteur & période) via API marine Open-Meteo (prévisions uniquement)
     </p>
 
     <!-- Choix du spot -->
@@ -162,7 +151,6 @@
       </div>
     </div>
 
-    <button id="loadButton">Charger les données et tracer</button>
     <div id="status"></div>
     <div id="current"></div>
 
@@ -316,7 +304,6 @@
         ctx.fillStyle = "rgba(76, 175, 80, 0.15)"; // vert translucide
 
         pluginOptions.intervals.forEach(interval => {
-          // On travaille par index (0,1,2...), donc on passe l'indice à getPixelForValue
           const startPixel = xScale.getPixelForValue(interval.startIndex);
           const endPixel   = xScale.getPixelForValue(interval.endIndex);
 
@@ -758,9 +745,17 @@
       status.textContent = "✅ Données mises à jour." + warnings;
     }
 
-    document.getElementById("loadButton").addEventListener("click", loadAndPlot);
+    // Recharger dès qu'on change un paramètre
+    function attachAutoReload() {
+      ["spotSelect","obsHours","obsStep","fcHours","fcStep"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.addEventListener("change", loadAndPlot);
+        }
+      });
+    }
 
-    // Afficher le spot par défaut au chargement (Le Ponant) et lancer le premier chargement
+    // Initialisation : Ponant par défaut + attach events + premier chargement
     (function initSpotInfo() {
       const spotSelect = document.getElementById("spotSelect");
       spotSelect.value = "ponant";
@@ -770,6 +765,7 @@
           `Spot sélectionné : ${spot.name} ` +
           `(${spot.lat.toFixed(4)}, ${spot.lon.toFixed(4)})`;
       }
+      attachAutoReload();
       loadAndPlot();
     })();
   </script>
