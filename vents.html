@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Vent & vagues – Observations + Prévisions (Open-Meteo)</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      margin: 20px;
+      background: #f5f5f5;
+    }
+    h1 {
+      font-size: 1.4rem;
+      margin-bottom: 0.5rem;
+    }
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 16px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+    button {
+      margin-top: 8px;
+      padding: 8px 16px;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button:hover {
+      filter: brightness(0.95);
+    }
+    #status {
+      margin-top: 8px;
+      font-size: 0.9rem;
+      color: #555;
+      white-space: pre-line;
+    }
+    #current {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 6px;
+      background: #f0f7ff;
+      font-size: 0.95rem;
+    }
+    h2 {
+      margin-top: 24px;
+      font-size: 1.1rem;
+    }
+    .chart-wrapper {
+      margin-top: 10px;
+      height: 340px;
+    }
+    canvas {
+      background: #fff;
+    }
+    .controls {
+      margin-top: 10px;
+      padding: 10px;
+      background: #fafafa;
+      border-radius: 6px;
+      font-size: 0.9rem;
+    }
+    .controls label {
+      margin-right: 8px;
+    }
+    .controls select {
+      margin-right: 16px;
+    }
+    .spot-row {
+      margin-top: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      font-size: 0.95rem;
+    }
+    .spot-row select {
+      margin-right: 0;
+    }
+    #spotInfo {
+      margin-top: 6px;
+      font-size: 0.9rem;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Vent & vagues – Observations + Prévisions</h1>
+    <p>
+      • 🔎Observations<br>
+      • 🔮Prévisions <strong>hourly</strong><br>
+      • 🕺🏻Vitesse en <strong>nœuds</strong>, vent affiché en <strong>SSE ↗</strong> (provenance + flèche)<br>
+      • 🌊Vagues (hauteur & période) via API marine Open-Meteo (prévisions uniquement)
+    </p>
+
+    <!-- Choix du spot -->
+    <div class="spot-row">
+      <strong>Spot :</strong>
+      <select id="spotSelect">
+        <option value="ponant">Le Ponant</option>
+        <option value="plageSud">Plage Sud</option>
+        <option value="aresquiers">Les Aresquiers</option>
+        <option value="mateille">Étang de Mateille</option>
+        <option value="travers">Le Travers</option>
+      </select>
+    </div>
+    <div id="spotInfo"></div>
+
+    <!-- Paramètres d'observation / prévision -->
+    <div class="controls">
+      <div>
+        <strong>Observations :</strong>
+        <label for="obsHours">Dernières</label>
+        <select id="obsHours">
+          <option value="1">1 h</option>
+          <option value="2">2 h</option>
+          <option value="3">3 h</option>
+          <option value="4" selected>4 h</option>
+          <option value="6">6 h</option>
+          <option value="8">8 h</option>
+          <option value="12">12 h</option>
+          <option value="18">18 h</option>
+          <option value="36">36 h</option>
+          <option value="48">48 h</option>
+          <option value="60">60 h</option>
+          <option value="72">72 h</option>
+          <option value="84">84 h</option>
+        </select>
+        <label for="obsStep">pas</label>
+        <select id="obsStep">
+          <option value="15" selected>15 min</option>
+          <option value="30">30 min</option>
+          <option value="60">60 min</option>
+        </select>
+      </div>
+      <div style="margin-top:6px;">
+        <strong>Prévisions :</strong>
+        <label for="fcHours">Prochaines</label>
+        <select id="fcHours">
+          <option value="3">3 h</option>
+          <option value="6">6 h</option>
+          <option value="9">9 h</option>
+          <option value="12" selected>12 h</option>
+          <option value="18">18 h</option>
+          <option value="36">36 h</option>
+          <option value="48">48 h</option>
+          <option value="60">60 h</option>
+          <option value="72">72 h</option>
+          <option value="84">84 h</option>
+        </select>
+        <label for="fcStep">pas</label>
+        <select id="fcStep">
+          <option value="1" selected>1 h</option>
+          <option value="2">2 h</option>
+          <option value="3">3 h</option>
+        </select>
+      </div>
+    </div>
+
+    <button id="loadButton">Charger les données et tracer</button>
+    <div id="status"></div>
+    <div id="current"></div>
+
+    <h2>Observations</h2>
+    <div class="chart-wrapper">
+      <canvas id="obsChart"></canvas>
+    </div>
+
+    <h2>Prévisions</h2>
+    <div class="chart-wrapper">
+      <canvas id="forecastChart"></canvas>
+    </div>
+  </div>
+
+  <script>
+    const KMH_TO_KT = 1 / 1.852;
+    let obsChart = null;
+    let forecastChart = null;
+
+    const SPOTS = {
+      ponant: {
+        name: "Le Ponant",
+        lat: 43.5645589,
+        lon: 4.1173114
+      },
+      plageSud: {
+        name: "Plage Sud",
+        lat: 43.515897,
+        lon: 4.124779
+      },
+      aresquiers: {
+        name: "Les Aresquiers",
+        lat: 43.441677,
+        lon: 3.790762
+      },
+      mateille: {
+        name: "Étang de Mateille",
+        lat: 43.117870,
+        lon: 3.119518
+      },
+      travers: {
+        name: "Le Travers",
+        lat: 43.5562922,
+        lon: 4.0294910
+      }
+    };
+
+    function buildWindUrl(lat, lon) {
+      return (
+        "https://api.open-meteo.com/v1/forecast" +
+        "?latitude=" + encodeURIComponent(lat) +
+        "&longitude=" + encodeURIComponent(lon) +
+        "&current=wind_speed_10m,wind_direction_10m,wind_gusts_10m" +
+        "&minutely_15=wind_speed_10m,wind_direction_10m,wind_gusts_10m" +
+        "&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m" +
+        "&timezone=Europe/Paris"
+      );
+    }
+
+    function buildMarineUrl(lat, lon) {
+      return (
+        "https://marine-api.open-meteo.com/v1/marine" +
+        "?latitude=" + encodeURIComponent(lat) +
+        "&longitude=" + encodeURIComponent(lon) +
+        "&hourly=wave_height,wave_period" +
+        "&timezone=Europe/Paris"
+      );
+    }
+
+    function formatLabel(dateStr) {
+      const d = new Date(dateStr);
+      const day   = String(d.getDate()).padStart(2, "0");
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const hours = String(d.getHours()).padStart(2, "0");
+      const mins  = String(d.getMinutes()).padStart(2, "0");
+      return `${hours}:${mins}\n${day}/${month}`;
+    }
+
+    function formatFullDateTime(dateStr) {
+      const d = new Date(dateStr);
+      return d.toLocaleString("fr-FR", {
+        timeZone: "Europe/Paris",
+        weekday: "short",
+        day: "2-digit",
+        month: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    }
+
+    // 16 points cardinaux : vent VENANT DE
+    function degToCompass16(deg) {
+      const directions = [
+        "N","NNE","NE","ENE","E","ESE","SE","SSE",
+        "S","SSW","SW","WSW","W","WNW","NW","NNW"
+      ];
+      return directions[Math.round((deg % 360) / 22.5) % 16];
+    }
+
+    // Flèche = direction où VA le vent (provenance + 180°)
+    function arrowForDeg(deg) {
+      const arrows = ["↑","↗","→","↘","↓","↙","←","↖"];
+      const toDir = (deg + 180) % 360;
+      return arrows[Math.round((toDir % 360) / 45) % 8];
+    }
+
+    // Détecte les intervalles où le vent moyen est entre minKt et maxKt
+    // pendant au moins minHours heures (continues).
+    function computeGreenIntervals(timesISO, valuesKt, minKt, maxKt, minHours) {
+      const n = valuesKt.length;
+      const intervals = [];
+      if (!n) return intervals;
+
+      const timesMs = timesISO.map(t => new Date(t).getTime());
+      const minMs = minHours * 3600 * 1000;
+
+      let i = 0;
+      while (i < n) {
+        if (valuesKt[i] >= minKt && valuesKt[i] < maxKt) {
+          let j = i;
+          while (
+            j + 1 < n &&
+            valuesKt[j + 1] >= minKt &&
+            valuesKt[j + 1] < maxKt
+          ) {
+            j++;
+          }
+          const duration = timesMs[j] - timesMs[i];
+          if (duration >= minMs) {
+            intervals.push({ startIndex: i, endIndex: j });
+          }
+          i = j + 1;
+        } else {
+          i++;
+        }
+      }
+      return intervals;
+    }
+
+    // Plugin pour colorer des "colonnes" verticales (bandes vertes)
+    const highlightBandsPlugin = {
+      id: "highlightBands",
+      beforeDatasetsDraw(chart, args, pluginOptions) {
+        if (!pluginOptions || !pluginOptions.intervals || !pluginOptions.intervals.length) return;
+
+        const { ctx, chartArea, scales } = chart;
+        const xScale = scales.x;
+        if (!xScale) return;
+
+        ctx.save();
+        ctx.fillStyle = "rgba(76, 175, 80, 0.15)"; // vert translucide
+
+        pluginOptions.intervals.forEach(interval => {
+          // On travaille par index (0,1,2...), donc on passe l'indice à getPixelForValue
+          const startPixel = xScale.getPixelForValue(interval.startIndex);
+          const endPixel   = xScale.getPixelForValue(interval.endIndex);
+
+          const left  = Math.max(startPixel, chartArea.left);
+          const right = Math.min(endPixel, chartArea.right);
+
+          if (right > left) {
+            ctx.fillRect(left, chartArea.top, right - left, chartArea.bottom - chartArea.top);
+          }
+        });
+
+        ctx.restore();
+      }
+    };
+
+    async function loadAndPlot() {
+      const status = document.getElementById("status");
+      const currentDiv = document.getElementById("current");
+      const spotInfoDiv = document.getElementById("spotInfo");
+      status.textContent = "⏳ Chargement des données...";
+      currentDiv.textContent = "";
+      let warnings = "";
+
+      const spotKey = document.getElementById("spotSelect").value;
+      const spot = SPOTS[spotKey];
+      if (!spot) {
+        status.textContent = "❌ Spot inconnu.";
+        return;
+      }
+
+      spotInfoDiv.textContent =
+        `Spot sélectionné : ${spot.name} ` +
+        `(${spot.lat.toFixed(4)}, ${spot.lon.toFixed(4)})`;
+
+      const obsHours = parseInt(document.getElementById("obsHours").value, 10);
+      const obsStepMin = parseInt(document.getElementById("obsStep").value, 10);
+      const fcHours = parseInt(document.getElementById("fcHours").value, 10);
+      const fcStepHours = parseInt(document.getElementById("fcStep").value, 10);
+
+      const windUrl = buildWindUrl(spot.lat, spot.lon);
+      const marineUrl = buildMarineUrl(spot.lat, spot.lon);
+
+      let data, marine;
+      try {
+        const [resWind, resMarine] = await Promise.all([
+          fetch(windUrl),
+          fetch(marineUrl)
+        ]);
+        data = await resWind.json();
+        marine = resMarine.ok ? await resMarine.json() : null;
+      } catch (e) {
+        status.textContent = "❌ Erreur réseau : " + e;
+        console.error(e);
+        return;
+      }
+
+      if (!data.current || !data.current.time) {
+        status.textContent = "❌ Réponse API inattendue (pas de current.time).";
+        console.log(data);
+        return;
+      }
+
+      const now = new Date(data.current.time).getTime();
+
+      /* -------- Vent actuel -------- */
+      const vKmh = data.current.wind_speed_10m;
+      const gKmh = data.current.wind_gusts_10m;
+      const dir  = data.current.wind_direction_10m;
+      const dirText = degToCompass16(dir);
+      const arrow = arrowForDeg(dir);
+
+      currentDiv.innerHTML =
+        `<strong>💨 Vent actuel :</strong><br>` +
+        `Moyen : ${(vKmh*KMH_TO_KT).toFixed(1)} kt (${vKmh.toFixed(1)} km/h)<br>` +
+        `Rafales : ${(gKmh*KMH_TO_KT).toFixed(1)} kt (${gKmh.toFixed(1)} km/h)<br>` +
+        `Vent : ${dirText} ${arrow}`;
+
+      /* -------- Observations (minutely_15) -------- */
+      if (!data.minutely_15 ||
+          !data.minutely_15.time ||
+          !data.minutely_15.wind_speed_10m ||
+          !data.minutely_15.wind_gusts_10m ||
+          !data.minutely_15.wind_direction_10m) {
+        console.warn("minutely_15 manquant, pas de graphe d'observation.");
+      } else {
+        const tM = data.minutely_15.time;
+        const sM_kmh = data.minutely_15.wind_speed_10m;
+        const gM_kmh = data.minutely_15.wind_gusts_10m;
+        const dM = data.minutely_15.wind_direction_10m;
+
+        const earliestMs = new Date(tM[0]).getTime();
+        const lookbackMs = obsHours * 3600 * 1000;
+        const requestedStartMs = now - lookbackMs;
+        const startMs = Math.max(earliestMs, requestedStartMs);
+
+        const availableHours = (now - earliestMs) / 3600000;
+        if (obsHours > availableHours) {
+          warnings += `\n⚠️ Historique limité à ~${availableHours.toFixed(1)} h par les données minutely_15.`;
+        }
+
+        const rawLabels = [];
+        const rawS_kt = [];
+        const rawG_kt = [];
+        const rawS_kmh = [];
+        const rawG_kmh = [];
+        const rawD = [];
+        const rawTimes = [];
+
+        for (let i=0; i<tM.length; i++) {
+          const ts = new Date(tM[i]).getTime();
+          if (ts >= startMs && ts <= now) {
+            rawLabels.push(formatLabel(tM[i]));
+            rawS_kmh.push(sM_kmh[i]);
+            rawG_kmh.push(gM_kmh[i]);
+            rawS_kt.push(sM_kmh[i] * KMH_TO_KT);
+            rawG_kt.push(gM_kmh[i] * KMH_TO_KT);
+            rawD.push(dM[i]);
+            rawTimes.push(tM[i]);
+          }
+        }
+
+        const factor = Math.max(1, Math.round(obsStepMin / 15));
+        const obsLabels = [];
+        const obsS_kt = [];
+        const obsG_kt = [];
+        const obsS_kmh = [];
+        const obsG_kmh = [];
+        const obsD = [];
+        const obsTimes = [];
+
+        for (let i = 0; i < rawLabels.length; i += factor) {
+          obsLabels.push(rawLabels[i]);
+          obsS_kt.push(rawS_kt[i]);
+          obsG_kt.push(rawG_kt[i]);
+          obsS_kmh.push(rawS_kmh[i]);
+          obsG_kmh.push(rawG_kmh[i]);
+          obsD.push(rawD[i]);
+          obsTimes.push(rawTimes[i]);
+        }
+
+        // Intervalles verts (15–20 kt pendant ≥ 1h)
+        const obsGreenIntervals = computeGreenIntervals(obsTimes, obsS_kt, 15, 20, 1);
+
+        const ctxObs = document.getElementById("obsChart").getContext("2d");
+        if (obsChart) obsChart.destroy();
+
+        obsChart = new Chart(ctxObs, {
+          type: "line",
+          plugins: [highlightBandsPlugin],
+          data: {
+            labels: obsLabels,
+            datasets: [
+              {
+                label: "💨 Vent moyen (kt)",
+                data: obsS_kt,
+                borderWidth: 2,
+                tension: 0.2,
+                pointRadius: 2
+              },
+              {
+                label: "💥 Rafales (kt)",
+                data: obsG_kt,
+                borderWidth: 2,
+                borderDash: [5,5],
+                tension: 0.2,
+                pointRadius: 2
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+              mode: 'nearest',
+              intersect: false
+            },
+            elements: {
+              point: {
+                hitRadius: 20
+              }
+            },
+            plugins: {
+              tooltip: {
+                callbacks: {
+                  title: ctx => {
+                    const i = ctx[0].dataIndex;
+                    return formatFullDateTime(obsTimes[i]);
+                  },
+                  label: ctx => {
+                    const i = ctx.dataIndex;
+                    if (ctx.datasetIndex === 0) {
+                      const vKt = obsS_kt[i];
+                      const vKmhLoc = obsS_kmh[i];
+                      return `💨 Vent moyen : ${vKt.toFixed(1)} kt (${vKmhLoc.toFixed(1)} km/h)`;
+                    } else {
+                      const vKt = obsG_kt[i];
+                      const vKmhLoc = obsG_kmh[i];
+                      return `💥 Rafale max : ${vKt.toFixed(1)} kt (${vKmhLoc.toFixed(1)} km/h)`;
+                    }
+                  },
+                  afterBody: ctx => {
+                    const i = ctx[0].dataIndex;
+                    const deg = obsD[i];
+                    const txt = degToCompass16(deg);
+                    const arr = arrowForDeg(deg);
+                    const lines = [`🧭 Vent : ${txt} ${arr}`];
+
+                    const inGreen = obsGreenIntervals.some(iv => i >= iv.startIndex && i <= iv.endIndex);
+                    if (inGreen) {
+                      lines.push("🏄‍♂️💨 Fenêtre 15–20 kt");
+                    }
+                    return lines;
+                  }
+                }
+              },
+              highlightBands: {
+                intervals: obsGreenIntervals
+              }
+            },
+            scales: {
+              y: {
+                title: { display: true, text: "Vent (nœuds)" }
+              }
+            }
+          }
+        });
+      }
+
+      /* -------- Prévisions vent (hourly) + vagues (marine) -------- */
+      if (!data.hourly ||
+          !data.hourly.time ||
+          !data.hourly.wind_speed_10m ||
+          !data.hourly.wind_gusts_10m ||
+          !data.hourly.wind_direction_10m) {
+        status.textContent = "❌ Réponse API inattendue (hourly manquant).";
+        console.log(data);
+        return;
+      }
+
+      const tH = data.hourly.time;
+      const sH_kmh = data.hourly.wind_speed_10m;
+      const gH_kmh = data.hourly.wind_gusts_10m;
+      const dH = data.hourly.wind_direction_10m;
+
+      const lastAvailableMs = new Date(tH[tH.length - 1]).getTime();
+      const endMsRequested = now + fcHours * 3600 * 1000;
+      const endMs = Math.min(lastAvailableMs, endMsRequested);
+
+      const availableFutureHours = (lastAvailableMs - now) / 3600000;
+      if (fcHours > availableFutureHours) {
+        warnings += `\n⚠️ Prévisions vent limitées à ~${availableFutureHours.toFixed(1)} h par les données hourly.`;
+      }
+
+      // Préparer les vagues (si dispo)
+      let marineMap = {};
+      if (marine && marine.hourly && marine.hourly.time &&
+          marine.hourly.wave_height && marine.hourly.wave_period) {
+        const mt = marine.hourly.time;
+        const mh = marine.hourly.wave_height;
+        const mp = marine.hourly.wave_period;
+        for (let i = 0; i < mt.length; i++) {
+          marineMap[mt[i]] = { h: mh[i], p: mp[i] };
+        }
+      } else {
+        warnings += `\nℹ️ Données vagues non disponibles ou incomplètes pour ce spot.`;
+      }
+
+      const rawFcLabels = [];
+      const rawFcS_kt = [];
+      const rawFcG_kt = [];
+      const rawFcS_kmh = [];
+      const rawFcG_kmh = [];
+      const rawFcD = [];
+      const rawFcTimes = [];
+      const rawFcWH = [];
+      const rawFcWP = [];
+
+      for (let i=0; i<tH.length; i++) {
+        const ts = new Date(tH[i]).getTime();
+        if (ts > now && ts <= endMs) {
+          rawFcLabels.push(formatLabel(tH[i]));
+          rawFcS_kmh.push(sH_kmh[i]);
+          rawFcG_kmh.push(gH_kmh[i]);
+          rawFcS_kt.push(sH_kmh[i] * KMH_TO_KT);
+          rawFcG_kt.push(gH_kmh[i] * KMH_TO_KT);
+          rawFcD.push(dH[i]);
+          rawFcTimes.push(tH[i]);
+
+          const wave = marineMap[tH[i]];
+          rawFcWH.push(wave ? wave.h : null);
+          rawFcWP.push(wave ? wave.p : null);
+        }
+      }
+
+      const stepFactor = Math.max(1, fcStepHours);
+      const fcLabels = [];
+      const fcS_kt = [];
+      const fcG_kt = [];
+      const fcS_kmh = [];
+      const fcG_kmh = [];
+      const fcD = [];
+      const fcTimes = [];
+      const fcWH = [];
+      const fcWP = [];
+
+      for (let i = 0; i < rawFcLabels.length; i += stepFactor) {
+        fcLabels.push(rawFcLabels[i]);
+        fcS_kt.push(rawFcS_kt[i]);
+        fcG_kt.push(rawFcG_kt[i]);
+        fcS_kmh.push(rawFcS_kmh[i]);
+        fcG_kmh.push(rawFcG_kmh[i]);
+        fcD.push(rawFcD[i]);
+        fcTimes.push(rawFcTimes[i]);
+        fcWH.push(rawFcWH[i]);
+        fcWP.push(rawFcWP[i]);
+      }
+
+      // Intervalles verts prévisions (15–20 kt pendant ≥ 1h)
+      const fcGreenIntervals = computeGreenIntervals(fcTimes, fcS_kt, 15, 20, 1);
+
+      const ctxFc = document.getElementById("forecastChart").getContext("2d");
+      if (forecastChart) forecastChart.destroy();
+
+      forecastChart = new Chart(ctxFc, {
+        type: "line",
+        plugins: [highlightBandsPlugin],
+        data: {
+          labels: fcLabels,
+          datasets: [
+            {
+              label: "💨 Vent moyen (kt)",
+              data: fcS_kt,
+              borderWidth: 2,
+              tension: 0.2,
+              pointRadius: 2,
+              yAxisID: "y"
+            },
+            {
+              label: "💥 Rafales (kt)",
+              data: fcG_kt,
+              borderWidth: 2,
+              borderDash: [5,5],
+              tension: 0.2,
+              pointRadius: 2,
+              yAxisID: "y"
+            },
+            {
+              label: "🌊 Hauteur vagues (m)",
+              data: fcWH,
+              borderWidth: 1.5,
+              borderDash: [4,2],
+              tension: 0.2,
+              pointRadius: 2,
+              yAxisID: "y2"
+            },
+            {
+              label: "⏱️ Période vagues (s)",
+              data: fcWP,
+              borderWidth: 1.5,
+              borderDash: [2,2],
+              tension: 0.2,
+              pointRadius: 2,
+              yAxisID: "y2"
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            mode: 'nearest',
+            intersect: false
+          },
+          elements: {
+            point: {
+              hitRadius: 20
+            }
+          },
+          plugins: {
+            tooltip: {
+              callbacks: {
+                title: ctx => {
+                  const i = ctx[0].dataIndex;
+                  return formatFullDateTime(fcTimes[i]);
+                },
+                label: ctx => {
+                  const i = ctx.dataIndex;
+                  const label = ctx.dataset.label;
+                  if (label.startsWith("💨")) {
+                    const vKt = fcS_kt[i];
+                    const vKmhLoc = fcS_kmh[i];
+                    return `💨 Vent moyen : ${vKt.toFixed(1)} kt (${vKmhLoc.toFixed(1)} km/h)`;
+                  } else if (label.startsWith("💥")) {
+                    const vKt = fcG_kt[i];
+                    const vKmhLoc = fcG_kmh[i];
+                    return `💥 Rafale max : ${vKt.toFixed(1)} kt (${vKmhLoc.toFixed(1)} km/h)`;
+                  } else if (label.startsWith("🌊")) {
+                    const h = fcWH[i];
+                    return (h != null) ? `🌊 Hauteur vagues : ${h.toFixed(2)} m` : "🌊 Hauteur vagues : n.d.";
+                  } else if (label.startsWith("⏱️")) {
+                    const p = fcWP[i];
+                    return (p != null) ? `⏱️ Période vagues : ${p.toFixed(1)} s` : "⏱️ Période vagues : n.d.";
+                  }
+                  return label + " : " + ctx.formattedValue;
+                },
+                afterBody: ctx => {
+                  const i = ctx[0].dataIndex;
+                  const deg = fcD[i];
+                  const txt = degToCompass16(deg);
+                  const arr = arrowForDeg(deg);
+                  const lines = [`🧭 Vent : ${txt} ${arr}`];
+
+                  const inGreen = fcGreenIntervals.some(iv => i >= iv.startIndex && i <= iv.endIndex);
+                  if (inGreen) {
+                    lines.push("🏄‍♂️💨 Fenêtre 15–20 kt");
+                  }
+                  return lines;
+                }
+              }
+            },
+            highlightBands: {
+              intervals: fcGreenIntervals
+            }
+          },
+          scales: {
+            y: {
+              position: "left",
+              title: { display: true, text: "Vent (nœuds)" }
+            },
+            y2: {
+              position: "right",
+              title: { display: true, text: "Vagues (m / s)" },
+              grid: { drawOnChartArea: false }
+            }
+          }
+        }
+      });
+
+      status.textContent = "✅ Données mises à jour." + warnings;
+    }
+
+    document.getElementById("loadButton").addEventListener("click", loadAndPlot);
+
+    // Afficher le spot par défaut au chargement (Le Ponant) et lancer le premier chargement
+    (function initSpotInfo() {
+      const spotSelect = document.getElementById("spotSelect");
+      spotSelect.value = "ponant";
+      const spot = SPOTS[spotSelect.value];
+      if (spot) {
+        document.getElementById("spotInfo").textContent =
+          `Spot sélectionné : ${spot.name} ` +
+          `(${spot.lat.toFixed(4)}, ${spot.lon.toFixed(4)})`;
+      }
+      loadAndPlot();
+    })();
+  </script>
+</body>
+</html>
