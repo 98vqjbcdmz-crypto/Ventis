@@ -292,36 +292,50 @@
       return intervals;
     }
 
-    // Intervalles autour du coucher de soleil (en minutes de fenêtre)
-    function computeSunsetIntervals(timesISO, sunsetTimesISO, windowMinutes) {
+    // Vrai si le timestamp est de nuit (en dehors des plages sunrise–sunset)
+    function isNight(tsISO, sunriseTimes, sunsetTimes) {
+      if (!sunriseTimes || !sunsetTimes || !sunriseTimes.length || sunriseTimes.length !== sunsetTimes.length) {
+        return false;
+      }
+      const t = new Date(tsISO).getTime();
+      for (let i = 0; i < sunriseTimes.length; i++) {
+        const sr = new Date(sunriseTimes[i]).getTime();
+        const ss = new Date(sunsetTimes[i]).getTime();
+        // Journée : entre lever et coucher du soleil
+        if (t >= sr && t < ss) {
+          return false; // jour
+        }
+      }
+      return true; // si pas dans une plage jour => nuit
+    }
+
+    // Regroupe les points de nuit en intervalles continus (pour les colonnes grisées)
+    function buildNightIntervals(timesISO, sunriseTimes, sunsetTimes) {
       const intervals = [];
-      if (!timesISO.length || !sunsetTimesISO || !sunsetTimesISO.length) return intervals;
+      if (!timesISO || !timesISO.length) return intervals;
 
-      const halfMs = (windowMinutes / 2) * 60 * 1000;
-      const timesMs = timesISO.map(t => new Date(t).getTime());
+      let inNight = false;
+      let startIndex = 0;
 
-      sunsetTimesISO.forEach(st => {
-        const sMs = new Date(st).getTime();
-        const startMs = sMs - halfMs;
-        const endMs = sMs + halfMs;
-
-        let startIndex = null;
-        let endIndex = null;
-
-        for (let i = 0; i < timesMs.length; i++) {
-          if (timesMs[i] >= startMs && startIndex === null) startIndex = i;
-          if (timesMs[i] <= endMs) endIndex = i;
+      for (let i = 0; i < timesISO.length; i++) {
+        const night = isNight(timesISO[i], sunriseTimes, sunsetTimes);
+        if (night && !inNight) {
+          inNight = true;
+          startIndex = i;
+        } else if (!night && inNight) {
+          inNight = false;
+          intervals.push({ startIndex, endIndex: i - 1 });
         }
+      }
 
-        if (startIndex !== null && endIndex !== null && endIndex >= startIndex) {
-          intervals.push({ startIndex, endIndex });
-        }
-      });
+      if (inNight) {
+        intervals.push({ startIndex, endIndex: timesISO.length - 1 });
+      }
 
       return intervals;
     }
 
-    // Plugin pour colorer des bandes : gris (coucher de soleil) + vert (fenêtre vent)
+    // Plugin pour colorer des bandes : gris (nuit) + vert (fenêtres 15–20 kt)
     const highlightBandsPlugin = {
       id: "highlightBands",
       beforeDatasetsDraw(chart, args, pluginOptions) {
@@ -346,10 +360,10 @@
         };
 
         ctx.save();
-        // Colonnes grisées : coucher du soleil
-        drawIntervals(pluginOptions.sunsetIntervals, "rgba(120,120,120,0.14)");
-        // Bandes vertes : fenêtres 15–20 kt
-        drawIntervals(pluginOptions.intervals, "rgba(76,175,80,0.15)");
+        // 🌙 Colonnes grisées = nuit
+        drawIntervals(pluginOptions.nightIntervals, "rgba(120,120,120,0.16)");
+        // 🟢 Fenêtres 15–20 kt (par-dessus)
+        drawIntervals(pluginOptions.intervals, "rgba(76,175,80,0.22)");
         ctx.restore();
       }
     };
@@ -405,8 +419,9 @@
 
       const now = new Date(data.current.time).getTime();
 
-      // Infos daily (coucher du soleil)
-      const sunsetTimes = (data.daily && data.daily.sunset) ? data.daily.sunset : [];
+      // Infos daily (sunrise / sunset)
+      const sunriseTimes = (data.daily && data.daily.sunrise) ? data.daily.sunrise : [];
+      const sunsetTimes  = (data.daily && data.daily.sunset)  ? data.daily.sunset  : [];
 
       /* -------- Vent actuel -------- */
       const vKmh = data.current.wind_speed_10m;
@@ -447,7 +462,7 @@
       }
 
       /* -------- Observations (minutely_15) -------- */
-      let obsAirTemp = []; // approx à partir des données horaires
+      let obsAirTemp = [];
 
       if (!data.minutely_15 ||
           !data.minutely_15.time ||
@@ -515,8 +530,8 @@
 
         // Intervalles verts (15–20 kt pendant ≥ 1h)
         const obsGreenIntervals = computeGreenIntervals(obsTimes, obsS_kt, 15, 20, 1);
-        // Colonnes grisées autour du coucher du soleil (fenêtre 60 min)
-        const obsSunsetIntervals = computeSunsetIntervals(obsTimes, sunsetTimes, 60);
+        // Intervalles de nuit (colonnes grisées)
+        const obsNightIntervals = buildNightIntervals(obsTimes, sunriseTimes, sunsetTimes);
 
         const ctxObs = document.getElementById("obsChart").getContext("2d");
         if (obsChart) obsChart.destroy();
@@ -598,7 +613,7 @@
               },
               highlightBands: {
                 intervals: obsGreenIntervals,
-                sunsetIntervals: obsSunsetIntervals
+                nightIntervals: obsNightIntervals
               }
             },
             scales: {
@@ -716,8 +731,8 @@
 
       // Intervalles verts prévisions (15–20 kt pendant ≥ 1h)
       const fcGreenIntervals = computeGreenIntervals(fcTimes, fcS_kt, 15, 20, 1);
-      // Colonnes grisées coucher du soleil
-      const fcSunsetIntervals = computeSunsetIntervals(fcTimes, sunsetTimes, 60);
+      // Intervalles de nuit pour les prévisions
+      const fcNightIntervals = buildNightIntervals(fcTimes, sunriseTimes, sunsetTimes);
 
       const ctxFc = document.getElementById("forecastChart").getContext("2d");
       if (forecastChart) forecastChart.destroy();
@@ -831,7 +846,7 @@
             },
             highlightBands: {
               intervals: fcGreenIntervals,
-              sunsetIntervals: fcSunsetIntervals
+              nightIntervals: fcNightIntervals
             }
           },
           scales: {
