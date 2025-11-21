@@ -207,7 +207,6 @@
         "&current=wind_speed_10m,wind_direction_10m,wind_gusts_10m,temperature_2m" +
         "&minutely_15=wind_speed_10m,wind_direction_10m,wind_gusts_10m" +
         "&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m,temperature_2m" +
-        "&daily=sunrise,sunset" +
         "&timezone=Europe/Paris"
       );
     }
@@ -292,25 +291,17 @@
       return intervals;
     }
 
-    // Vrai si le timestamp est de nuit (en dehors des plages sunrise–sunset)
-    function isNight(tsISO, sunriseTimes, sunsetTimes) {
-      if (!sunriseTimes || !sunsetTimes || !sunriseTimes.length || sunriseTimes.length !== sunsetTimes.length) {
-        return false;
-      }
-      const t = new Date(tsISO).getTime();
-      for (let i = 0; i < sunriseTimes.length; i++) {
-        const sr = new Date(sunriseTimes[i]).getTime();
-        const ss = new Date(sunsetTimes[i]).getTime();
-        // Journée : entre lever et coucher du soleil
-        if (t >= sr && t < ss) {
-          return false; // jour
-        }
-      }
-      return true; // si pas dans une plage jour => nuit
+    // Nuit approximative : avant 7h ou après 21h (heure locale Europe/Paris)
+    function isNightByHour(tsISO) {
+      const d = new Date(tsISO);
+      // convertir grossièrement en heure locale Europe/Paris
+      // (on suppose que l'API renvoie déjà en Europe/Paris, ce qui est le cas)
+      const h = d.getHours();
+      return (h < 7 || h >= 21);
     }
 
-    // Regroupe les points de nuit en intervalles continus (pour les colonnes grisées)
-    function buildNightIntervals(timesISO, sunriseTimes, sunsetTimes) {
+    // Regroupe les points de nuit en intervalles continus
+    function buildNightIntervals(timesISO) {
       const intervals = [];
       if (!timesISO || !timesISO.length) return intervals;
 
@@ -318,7 +309,7 @@
       let startIndex = 0;
 
       for (let i = 0; i < timesISO.length; i++) {
-        const night = isNight(timesISO[i], sunriseTimes, sunsetTimes);
+        const night = isNightByHour(timesISO[i]);
         if (night && !inNight) {
           inNight = true;
           startIndex = i;
@@ -418,10 +409,6 @@
       }
 
       const now = new Date(data.current.time).getTime();
-
-      // Infos daily (sunrise / sunset)
-      const sunriseTimes = (data.daily && data.daily.sunrise) ? data.daily.sunrise : [];
-      const sunsetTimes  = (data.daily && data.daily.sunset)  ? data.daily.sunset  : [];
 
       /* -------- Vent actuel -------- */
       const vKmh = data.current.wind_speed_10m;
@@ -531,7 +518,7 @@
         // Intervalles verts (15–20 kt pendant ≥ 1h)
         const obsGreenIntervals = computeGreenIntervals(obsTimes, obsS_kt, 15, 20, 1);
         // Intervalles de nuit (colonnes grisées)
-        const obsNightIntervals = buildNightIntervals(obsTimes, sunriseTimes, sunsetTimes);
+        const obsNightIntervals = buildNightIntervals(obsTimes);
 
         const ctxObs = document.getElementById("obsChart").getContext("2d");
         if (obsChart) obsChart.destroy();
@@ -732,7 +719,7 @@
       // Intervalles verts prévisions (15–20 kt pendant ≥ 1h)
       const fcGreenIntervals = computeGreenIntervals(fcTimes, fcS_kt, 15, 20, 1);
       // Intervalles de nuit pour les prévisions
-      const fcNightIntervals = buildNightIntervals(fcTimes, sunriseTimes, sunsetTimes);
+      const fcNightIntervals = buildNightIntervals(fcTimes);
 
       const ctxFc = document.getElementById("forecastChart").getContext("2d");
       if (forecastChart) forecastChart.destroy();
