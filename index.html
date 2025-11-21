@@ -204,9 +204,10 @@
         "https://api.open-meteo.com/v1/forecast" +
         "?latitude=" + encodeURIComponent(lat) +
         "&longitude=" + encodeURIComponent(lon) +
-        "&current=wind_speed_10m,wind_direction_10m,wind_gusts_10m" +
+        "&current=wind_speed_10m,wind_direction_10m,wind_gusts_10m,temperature_2m" +
         "&minutely_15=wind_speed_10m,wind_direction_10m,wind_gusts_10m" +
-        "&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m" +
+        "&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m,temperature_2m" +
+        "&daily=sunrise,sunset" +
         "&timezone=Europe/Paris"
       );
     }
@@ -216,7 +217,7 @@
         "https://marine-api.open-meteo.com/v1/marine" +
         "?latitude=" + encodeURIComponent(lat) +
         "&longitude=" + encodeURIComponent(lon) +
-        "&hourly=wave_height,wave_period" +
+        "&hourly=wave_height,wave_period,sea_surface_temperature" +
         "&timezone=Europe/Paris"
       );
     }
@@ -291,31 +292,64 @@
       return intervals;
     }
 
-    // Plugin pour colorer des "colonnes" verticales (bandes vertes)
+    // Intervalles autour du coucher de soleil (en minutes de fenêtre)
+    function computeSunsetIntervals(timesISO, sunsetTimesISO, windowMinutes) {
+      const intervals = [];
+      if (!timesISO.length || !sunsetTimesISO || !sunsetTimesISO.length) return intervals;
+
+      const halfMs = (windowMinutes / 2) * 60 * 1000;
+      const timesMs = timesISO.map(t => new Date(t).getTime());
+
+      sunsetTimesISO.forEach(st => {
+        const sMs = new Date(st).getTime();
+        const startMs = sMs - halfMs;
+        const endMs = sMs + halfMs;
+
+        let startIndex = null;
+        let endIndex = null;
+
+        for (let i = 0; i < timesMs.length; i++) {
+          if (timesMs[i] >= startMs && startIndex === null) startIndex = i;
+          if (timesMs[i] <= endMs) endIndex = i;
+        }
+
+        if (startIndex !== null && endIndex !== null && endIndex >= startIndex) {
+          intervals.push({ startIndex, endIndex });
+        }
+      });
+
+      return intervals;
+    }
+
+    // Plugin pour colorer des bandes : gris (coucher de soleil) + vert (fenêtre vent)
     const highlightBandsPlugin = {
       id: "highlightBands",
       beforeDatasetsDraw(chart, args, pluginOptions) {
-        if (!pluginOptions || !pluginOptions.intervals || !pluginOptions.intervals.length) return;
+        if (!pluginOptions) return;
 
         const { ctx, chartArea, scales } = chart;
         const xScale = scales.x;
         if (!xScale) return;
 
+        const drawIntervals = (intervals, fillStyle) => {
+          if (!intervals || !intervals.length) return;
+          ctx.fillStyle = fillStyle;
+          intervals.forEach(interval => {
+            const startPixel = xScale.getPixelForValue(interval.startIndex);
+            const endPixel   = xScale.getPixelForValue(interval.endIndex);
+            const left  = Math.max(startPixel, chartArea.left);
+            const right = Math.min(endPixel, chartArea.right);
+            if (right > left) {
+              ctx.fillRect(left, chartArea.top, right - left, chartArea.bottom - chartArea.top);
+            }
+          });
+        };
+
         ctx.save();
-        ctx.fillStyle = "rgba(76, 175, 80, 0.15)"; // vert translucide
-
-        pluginOptions.intervals.forEach(interval => {
-          const startPixel = xScale.getPixelForValue(interval.startIndex);
-          const endPixel   = xScale.getPixelForValue(interval.endIndex);
-
-          const left  = Math.max(startPixel, chartArea.left);
-          const right = Math.min(endPixel, chartArea.right);
-
-          if (right > left) {
-            ctx.fillRect(left, chartArea.top, right - left, chartArea.bottom - chartArea.top);
-          }
-        });
-
+        // Colonnes grisées : coucher du soleil
+        drawIntervals(pluginOptions.sunsetIntervals, "rgba(120,120,120,0.14)");
+        // Bandes vertes : fenêtres 15–20 kt
+        drawIntervals(pluginOptions.intervals, "rgba(76,175,80,0.15)");
         ctx.restore();
       }
     };
@@ -335,9 +369,11 @@
         return;
       }
 
-      spotInfoDiv.textContent =
-        `Spot sélectionné : ${spot.name} ` +
-        `(${spot.lat.toFixed(4)}, ${spot.lon.toFixed(4)})`;
+      // Lien cliquable Google Maps sur les coordonnées
+      spotInfoDiv.innerHTML =
+        `Spot sélectionné : <strong>${spot.name}</strong> ` +
+        `(<a href="https://www.google.com/maps?q=${spot.lat},${spot.lon}" target="_blank" rel="noopener noreferrer">` +
+        `${spot.lat.toFixed(4)}, ${spot.lon.toFixed(4)}</a>)`;
 
       const obsHours = parseInt(document.getElementById("obsHours").value, 10);
       const obsStepMin = parseInt(document.getElementById("obsStep").value, 10);
@@ -369,20 +405,50 @@
 
       const now = new Date(data.current.time).getTime();
 
+      // Infos daily (coucher du soleil)
+      const sunsetTimes = (data.daily && data.daily.sunset) ? data.daily.sunset : [];
+
       /* -------- Vent actuel -------- */
       const vKmh = data.current.wind_speed_10m;
       const gKmh = data.current.wind_gusts_10m;
       const dir  = data.current.wind_direction_10m;
+      const tempCurrent = data.current.temperature_2m;
       const dirText = degToCompass16(dir);
       const arrow = arrowForDeg(dir);
 
-      currentDiv.innerHTML =
+      let currentHtml =
         `<strong>💨 Vent actuel :</strong><br>` +
         `Moyen : ${(vKmh*KMH_TO_KT).toFixed(1)} kt (${vKmh.toFixed(1)} km/h)<br>` +
         `Rafales : ${(gKmh*KMH_TO_KT).toFixed(1)} kt (${gKmh.toFixed(1)} km/h)<br>` +
         `Vent : ${dirText} ${arrow}`;
+      if (typeof tempCurrent === "number") {
+        currentHtml += `<br>🌡️ Air : ${tempCurrent.toFixed(1)} °C`;
+      }
+      currentDiv.innerHTML = currentHtml;
+
+      /* -------- Données horaires (pour température air) -------- */
+      const hourlyTimes = (data.hourly && data.hourly.time) ? data.hourly.time : [];
+      const hourlyTemp2m = (data.hourly && data.hourly.temperature_2m) ? data.hourly.temperature_2m : null;
+      const hourlyTimesMs = hourlyTimes.map(t => new Date(t).getTime());
+
+      function getNearestHourlyTemp(dateISO) {
+        if (!hourlyTemp2m || !hourlyTimesMs.length) return null;
+        const tMs = new Date(dateISO).getTime();
+        let bestIdx = 0;
+        let bestDiff = Math.abs(tMs - hourlyTimesMs[0]);
+        for (let i = 1; i < hourlyTimesMs.length; i++) {
+          const diff = Math.abs(tMs - hourlyTimesMs[i]);
+          if (diff < bestDiff) {
+            bestDiff = diff;
+            bestIdx = i;
+          }
+        }
+        return hourlyTemp2m[bestIdx];
+      }
 
       /* -------- Observations (minutely_15) -------- */
+      let obsAirTemp = []; // approx à partir des données horaires
+
       if (!data.minutely_15 ||
           !data.minutely_15.time ||
           !data.minutely_15.wind_speed_10m ||
@@ -434,6 +500,7 @@
         const obsG_kmh = [];
         const obsD = [];
         const obsTimes = [];
+        obsAirTemp = [];
 
         for (let i = 0; i < rawLabels.length; i += factor) {
           obsLabels.push(rawLabels[i]);
@@ -443,10 +510,13 @@
           obsG_kmh.push(rawG_kmh[i]);
           obsD.push(rawD[i]);
           obsTimes.push(rawTimes[i]);
+          obsAirTemp.push(getNearestHourlyTemp(rawTimes[i]));
         }
 
         // Intervalles verts (15–20 kt pendant ≥ 1h)
         const obsGreenIntervals = computeGreenIntervals(obsTimes, obsS_kt, 15, 20, 1);
+        // Colonnes grisées autour du coucher du soleil (fenêtre 60 min)
+        const obsSunsetIntervals = computeSunsetIntervals(obsTimes, sunsetTimes, 60);
 
         const ctxObs = document.getElementById("obsChart").getContext("2d");
         if (obsChart) obsChart.destroy();
@@ -516,12 +586,19 @@
                     if (inGreen) {
                       lines.push("🏄‍♂️💨 Fenêtre 15–20 kt");
                     }
+
+                    const tAir = obsAirTemp[i];
+                    if (typeof tAir === "number") {
+                      lines.push(`🌡️ Air : ${tAir.toFixed(1)} °C`);
+                    }
+
                     return lines;
                   }
                 }
               },
               highlightBands: {
-                intervals: obsGreenIntervals
+                intervals: obsGreenIntervals,
+                sunsetIntervals: obsSunsetIntervals
               }
             },
             scales: {
@@ -548,6 +625,7 @@
       const sH_kmh = data.hourly.wind_speed_10m;
       const gH_kmh = data.hourly.wind_gusts_10m;
       const dH = data.hourly.wind_direction_10m;
+      const tAirH = data.hourly.temperature_2m || [];
 
       const lastAvailableMs = new Date(tH[tH.length - 1]).getTime();
       const endMsRequested = now + fcHours * 3600 * 1000;
@@ -558,15 +636,20 @@
         warnings += `\n⚠️ Prévisions vent limitées à ~${availableFutureHours.toFixed(1)} h par les données hourly.`;
       }
 
-      // Préparer les vagues (si dispo)
+      // Préparer les vagues + température eau (si dispo)
       let marineMap = {};
       if (marine && marine.hourly && marine.hourly.time &&
           marine.hourly.wave_height && marine.hourly.wave_period) {
         const mt = marine.hourly.time;
         const mh = marine.hourly.wave_height;
         const mp = marine.hourly.wave_period;
+        const msst = marine.hourly.sea_surface_temperature || null;
         for (let i = 0; i < mt.length; i++) {
-          marineMap[mt[i]] = { h: mh[i], p: mp[i] };
+          marineMap[mt[i]] = {
+            h: mh[i],
+            p: mp[i],
+            t: msst ? msst[i] : null
+          };
         }
       } else {
         warnings += `\nℹ️ Données vagues non disponibles ou incomplètes pour ce spot.`;
@@ -581,6 +664,8 @@
       const rawFcTimes = [];
       const rawFcWH = [];
       const rawFcWP = [];
+      const rawFcTAir = [];
+      const rawFcTWater = [];
 
       for (let i=0; i<tH.length; i++) {
         const ts = new Date(tH[i]).getTime();
@@ -596,6 +681,9 @@
           const wave = marineMap[tH[i]];
           rawFcWH.push(wave ? wave.h : null);
           rawFcWP.push(wave ? wave.p : null);
+          rawFcTWater.push(wave ? wave.t : null);
+
+          rawFcTAir.push(typeof tAirH[i] === "number" ? tAirH[i] : null);
         }
       }
 
@@ -609,6 +697,8 @@
       const fcTimes = [];
       const fcWH = [];
       const fcWP = [];
+      const fcTAir = [];
+      const fcTWater = [];
 
       for (let i = 0; i < rawFcLabels.length; i += stepFactor) {
         fcLabels.push(rawFcLabels[i]);
@@ -620,10 +710,14 @@
         fcTimes.push(rawFcTimes[i]);
         fcWH.push(rawFcWH[i]);
         fcWP.push(rawFcWP[i]);
+        fcTAir.push(rawFcTAir[i]);
+        fcTWater.push(rawFcTWater[i]);
       }
 
       // Intervalles verts prévisions (15–20 kt pendant ≥ 1h)
       const fcGreenIntervals = computeGreenIntervals(fcTimes, fcS_kt, 15, 20, 1);
+      // Colonnes grisées coucher du soleil
+      const fcSunsetIntervals = computeSunsetIntervals(fcTimes, sunsetTimes, 60);
 
       const ctxFc = document.getElementById("forecastChart").getContext("2d");
       if (forecastChart) forecastChart.destroy();
@@ -721,12 +815,23 @@
                   if (inGreen) {
                     lines.push("🏄‍♂️💨 Fenêtre 15–20 kt");
                   }
+
+                  const tAir = fcTAir[i];
+                  const tWater = fcTWater[i];
+                  if (typeof tAir === "number") {
+                    lines.push(`🌡️ Air : ${tAir.toFixed(1)} °C`);
+                  }
+                  if (typeof tWater === "number") {
+                    lines.push(`🌡️ Eau : ${tWater.toFixed(1)} °C`);
+                  }
+
                   return lines;
                 }
               }
             },
             highlightBands: {
-              intervals: fcGreenIntervals
+              intervals: fcGreenIntervals,
+              sunsetIntervals: fcSunsetIntervals
             }
           },
           scales: {
@@ -762,9 +867,10 @@
       spotSelect.value = "ponant";
       const spot = SPOTS[spotSelect.value];
       if (spot) {
-        document.getElementById("spotInfo").textContent =
-          `Spot sélectionné : ${spot.name} ` +
-          `(${spot.lat.toFixed(4)}, ${spot.lon.toFixed(4)})`;
+        document.getElementById("spotInfo").innerHTML =
+          `Spot sélectionné : <strong>${spot.name}</strong> ` +
+          `(<a href="https://www.google.com/maps?q=${spot.lat},${spot.lon}" target="_blank" rel="noopener noreferrer">` +
+          `${spot.lat.toFixed(4)}, ${spot.lon.toFixed(4)}</a>)`;
       }
       attachAutoReload();
       loadAndPlot();
