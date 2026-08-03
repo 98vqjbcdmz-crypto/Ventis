@@ -991,6 +991,16 @@
       resizeSectionChart(sectionId);
     }
 
+    function hideChartTooltips() {
+      [obsChart, forecastChart, tideChart].forEach((chart) => {
+        if (!chart) return;
+
+        chart.setActiveElements([]);
+        chart.tooltip?.setActiveElements([], { x: 0, y: 0 });
+        chart.update("none");
+      });
+    }
+
     function updateSpotInfo(spot) {
       const spotInfoDiv = document.getElementById("spotInfo");
       spotInfoDiv.innerHTML =
@@ -1643,6 +1653,12 @@
       document.addEventListener("click", (event) => {
         if (!document.getElementById("spotSearchContainer").contains(event.target)) {
           closeSpotSuggestions();
+        }
+      });
+
+      document.addEventListener("pointerdown", (event) => {
+        if (!event.target.closest(".chart-wrapper")) {
+          hideChartTooltips();
         }
       });
 
