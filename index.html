@@ -57,6 +57,13 @@
     .chart-heading-row h2 {
       margin: 0;
     }
+    .chart-spot-name {
+      margin-left: 0.4em;
+      color: #66717b;
+      font-size: 0.58em;
+      font-style: italic;
+      font-weight: 400;
+    }
     .chart-fullscreen-button,
     .chart-close-button {
       min-height: 34px;
@@ -411,7 +418,7 @@
 
     <section class="chart-section" id="observationsSection">
       <div class="chart-heading-row">
-        <h2>Observations</h2>
+        <h2>Observations <small class="chart-spot-name" id="observationsSpotName"></small></h2>
         <button class="chart-fullscreen-button" type="button" data-fullscreen-target="observationsSection">
           Plein écran
         </button>
@@ -424,7 +431,7 @@
 
     <section class="chart-section" id="forecastSection">
       <div class="chart-heading-row">
-        <h2>Prévisions</h2>
+        <h2>Prévisions <small class="chart-spot-name" id="forecastSpotName"></small></h2>
         <button class="chart-fullscreen-button" type="button" data-fullscreen-target="forecastSection">
           Plein écran
         </button>
@@ -926,6 +933,9 @@
         `Spot sélectionné : <strong>${spot.nom}</strong> ` +
         `(<a href="https://www.google.com/maps?q=${spot.latitude},${spot.longitude}" target="_blank" rel="noopener noreferrer">` +
         `${spot.latitude.toFixed(4)}, ${spot.longitude.toFixed(4)}</a>)`;
+
+      document.getElementById("observationsSpotName").textContent = spot.nom;
+      document.getElementById("forecastSpotName").textContent = spot.nom;
     }
 
     function updateNearbySelection() {

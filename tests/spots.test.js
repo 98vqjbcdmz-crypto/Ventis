@@ -33,6 +33,15 @@ test("la base couvre les principaux spots de la Manche", async () => {
   });
 });
 
+test("la base permet de rechercher le spot de Leucate", async () => {
+  const spots = JSON.parse(await readFile(spotsUrl, "utf8"));
+  const leucate = spots.find((spot) => spot.id === "leucate-le-goulet");
+
+  assert.equal(leucate?.nom, "Leucate – Le Goulet");
+  assert.equal(leucate?.departement, "Aude");
+  assert.ok(leucate?.tags.includes("Leucate"));
+});
+
 test("le classement autour de Granville retourne cinq spots cohérents", async () => {
   const spots = JSON.parse(await readFile(spotsUrl, "utf8"));
   const nearby = sortSpotsByDistance(

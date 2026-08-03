@@ -56,6 +56,20 @@
     "tags": []
   },
   {
+    "id": "leucate-le-goulet",
+    "nom": "Leucate – Le Goulet",
+    "latitude": 42.910722,
+    "longitude": 3.019222,
+    "region": "Occitanie",
+    "departement": "Aude",
+    "pays": "France",
+    "orientationIdeale": [],
+    "niveau": null,
+    "maree": null,
+    "typePlanEau": "étang",
+    "tags": ["Leucate", "Le Goulet", "wingfoil", "windsurf", "étang"]
+  },
+  {
     "id": "travers",
     "nom": "Le Travers",
     "latitude": 43.5562922,
