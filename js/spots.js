@@ -48,7 +48,7 @@ export async function loadSpots(fetchImplementation = globalThis.fetch) {
   }
 
   const spotsUrl = new URL("../data/spots.json", import.meta.url);
-  const response = await fetchImplementation(spotsUrl);
+  const response = await fetchImplementation(spotsUrl, { cache: "no-store" });
 
   if (!response.ok) {
     throw new Error(`Chargement des spots impossible (${response.status}).`);

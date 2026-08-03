@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 import { sortSpotsByDistance } from "../js/distance.js";
-import { validateSpots } from "../js/spots.js";
+import { loadSpots, validateSpots } from "../js/spots.js";
 
 const spotsUrl = new URL("../data/spots.json", import.meta.url);
 
@@ -40,6 +40,29 @@ test("la base permet de rechercher le spot de Leucate", async () => {
   assert.equal(leucate?.nom, "Leucate – Le Goulet");
   assert.equal(leucate?.departement, "Aude");
   assert.ok(leucate?.tags.includes("Leucate"));
+});
+
+test("le chargement de la base contourne le cache du navigateur", async () => {
+  let fetchOptions;
+  const spots = [{
+    id: "test",
+    nom: "Spot test",
+    latitude: 48,
+    longitude: -1,
+    region: "Normandie",
+    pays: "France"
+  }];
+
+  const loadedSpots = await loadSpots((url, options) => {
+    fetchOptions = options;
+    return Promise.resolve({
+      ok: true,
+      json: () => Promise.resolve(spots)
+    });
+  });
+
+  assert.equal(fetchOptions.cache, "no-store");
+  assert.equal(loadedSpots, spots);
 });
 
 test("le classement autour de Granville retourne cinq spots cohérents", async () => {
