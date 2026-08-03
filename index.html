@@ -47,6 +47,78 @@
       margin-top: 24px;
       font-size: 1.1rem;
     }
+    .chart-heading-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 24px;
+    }
+    .chart-heading-row h2 {
+      margin: 0;
+    }
+    .chart-fullscreen-button,
+    .chart-close-button {
+      min-height: 34px;
+      padding: 5px 10px;
+      border: 1px solid #c7d2dc;
+      border-radius: 6px;
+      background: #fff;
+      color: #27384a;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 600;
+    }
+    .chart-fullscreen-button:hover,
+    .chart-close-button:hover {
+      background: #f0f7ff;
+    }
+    .chart-close-button {
+      display: none;
+      position: absolute;
+      z-index: 2;
+      top: max(12px, env(safe-area-inset-top));
+      right: max(12px, env(safe-area-inset-right));
+      width: 40px;
+      min-height: 40px;
+      padding: 0;
+      border-radius: 50%;
+      font-size: 1.5rem;
+      line-height: 1;
+    }
+    .chart-section.is-chart-fullscreen {
+      position: fixed;
+      z-index: 1000;
+      inset: 0;
+      display: flex;
+      box-sizing: border-box;
+      flex-direction: column;
+      padding:
+        max(16px, env(safe-area-inset-top))
+        max(16px, env(safe-area-inset-right))
+        max(16px, env(safe-area-inset-bottom))
+        max(16px, env(safe-area-inset-left));
+      background: #fff;
+    }
+    .chart-section.is-chart-fullscreen .chart-heading-row {
+      flex: 0 0 auto;
+      margin: 0 52px 8px 0;
+    }
+    .chart-section.is-chart-fullscreen .chart-fullscreen-button {
+      display: none;
+    }
+    .chart-section.is-chart-fullscreen .chart-close-button {
+      display: block;
+    }
+    .chart-section.is-chart-fullscreen .chart-wrapper {
+      flex: 1 1 auto;
+      height: auto;
+      min-height: 0;
+      margin-top: 0;
+    }
+    body.chart-fullscreen-open {
+      overflow: hidden;
+    }
     .chart-wrapper {
       margin-top: 10px;
       height: 340px;
@@ -97,6 +169,77 @@
       cursor: wait;
       opacity: 0.65;
     }
+    .spot-search {
+      position: relative;
+      max-width: 440px;
+      margin-top: 10px;
+    }
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    #spotSearch {
+      width: 100%;
+      min-height: 40px;
+      box-sizing: border-box;
+      padding: 8px 11px;
+      border: 1px solid #c7d2dc;
+      border-radius: 6px;
+      background: #fff;
+      color: #222;
+      font: inherit;
+    }
+    #spotSearch:focus {
+      border-color: #6d9bc3;
+      outline: 2px solid rgba(109, 155, 195, 0.2);
+    }
+    #spotSuggestions {
+      position: absolute;
+      z-index: 20;
+      top: calc(100% + 4px);
+      right: 0;
+      left: 0;
+      margin: 0;
+      padding: 4px;
+      border: 1px solid #c7d2dc;
+      border-radius: 7px;
+      background: #fff;
+      box-shadow: 0 8px 22px rgba(20, 38, 56, 0.16);
+      list-style: none;
+    }
+    #spotSuggestions[hidden] {
+      display: none;
+    }
+    .spot-suggestion {
+      display: flex;
+      width: 100%;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 9px 10px;
+      border: 0;
+      border-radius: 5px;
+      background: transparent;
+      color: #222;
+      cursor: pointer;
+      font: inherit;
+      text-align: left;
+    }
+    .spot-suggestion:hover,
+    .spot-suggestion[aria-selected="true"] {
+      background: #f0f7ff;
+    }
+    .spot-suggestion-location {
+      color: #66717b;
+      font-size: 0.82rem;
+      white-space: nowrap;
+    }
     #spotInfo {
       margin-top: 6px;
       font-size: 0.9rem;
@@ -145,6 +288,33 @@
       color: #555;
       white-space: nowrap;
     }
+    .tide-block {
+      margin-top: 16px;
+      padding: 10px;
+      border-radius: 6px;
+      background: #fafafa;
+      font-size: 0.9rem;
+    }
+    .tide-toggle {
+      display: inline-flex;
+      min-height: 32px;
+      align-items: center;
+      gap: 7px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+    #tidePanel[hidden] {
+      display: none;
+    }
+    .tide-note,
+    #tideStatus {
+      margin: 5px 0 0;
+      color: #66717b;
+      font-size: 0.82rem;
+    }
+    .tide-chart-wrapper {
+      height: 230px;
+    }
     @media (max-width: 600px) {
       body {
         margin: 0;
@@ -159,6 +329,9 @@
       }
       #nearMeButton {
         flex: 1 1 150px;
+      }
+      .spot-search {
+        max-width: none;
       }
       .chart-wrapper {
         height: 300px;
@@ -181,6 +354,20 @@
       <strong>Spot :</strong>
       <select id="spotSelect" aria-label="Spot"></select>
       <button id="nearMeButton" type="button">📍 Autour de moi</button>
+    </div>
+    <div class="spot-search" id="spotSearchContainer">
+      <label class="visually-hidden" for="spotSearch">Rechercher un spot</label>
+      <input
+        id="spotSearch"
+        type="search"
+        placeholder="Rechercher un spot, une région…"
+        autocomplete="off"
+        role="combobox"
+        aria-autocomplete="list"
+        aria-controls="spotSuggestions"
+        aria-expanded="false"
+      />
+      <ul id="spotSuggestions" role="listbox" hidden></ul>
     </div>
     <div id="spotInfo"></div>
     <div id="geolocationStatus" role="status" aria-live="polite"></div>
@@ -244,14 +431,44 @@
     <div id="status"></div>
     <div id="current"></div>
 
-    <h2>Observations</h2>
-    <div class="chart-wrapper">
-      <canvas id="obsChart"></canvas>
-    </div>
+    <section class="chart-section" id="observationsSection">
+      <div class="chart-heading-row">
+        <h2>Observations</h2>
+        <button class="chart-fullscreen-button" type="button" data-fullscreen-target="observationsSection">
+          Plein écran
+        </button>
+      </div>
+      <button class="chart-close-button" type="button" aria-label="Quitter le plein écran">×</button>
+      <div class="chart-wrapper">
+        <canvas id="obsChart"></canvas>
+      </div>
+    </section>
 
-    <h2>Prévisions</h2>
-    <div class="chart-wrapper">
-      <canvas id="forecastChart"></canvas>
+    <section class="chart-section" id="forecastSection">
+      <div class="chart-heading-row">
+        <h2>Prévisions</h2>
+        <button class="chart-fullscreen-button" type="button" data-fullscreen-target="forecastSection">
+          Plein écran
+        </button>
+      </div>
+      <button class="chart-close-button" type="button" aria-label="Quitter le plein écran">×</button>
+      <div class="chart-wrapper">
+        <canvas id="forecastChart"></canvas>
+      </div>
+    </section>
+
+    <div class="tide-block">
+      <label class="tide-toggle" for="tideToggle">
+        <input id="tideToggle" type="checkbox" aria-controls="tidePanel" aria-expanded="false" />
+        Afficher la marée
+      </label>
+      <div id="tidePanel" hidden>
+        <p class="tide-note">Hauteur d’eau estimée par modèle, à ne pas utiliser pour la navigation.</p>
+        <div id="tideStatus" role="status"></div>
+        <div class="chart-wrapper tide-chart-wrapper">
+          <canvas id="tideChart"></canvas>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -269,9 +486,14 @@
     const KMH_TO_KT = 1 / 1.852;
     let obsChart = null;
     let forecastChart = null;
+    let tideChart = null;
     let spots = [];
     let spotsById = Object.create(null);
     let nearbySpots = [];
+    let matchingSpots = [];
+    let activeSuggestionIndex = -1;
+    let latestTideForecast = null;
+    let activeFullscreenSection = null;
     let loadRequestVersion = 0;
 
     function buildWindUrl(lat, lon) {
@@ -291,7 +513,7 @@
         "https://marine-api.open-meteo.com/v1/marine" +
         "?latitude=" + encodeURIComponent(lat) +
         "&longitude=" + encodeURIComponent(lon) +
-        "&hourly=wave_height,wave_period,sea_surface_temperature" +
+        "&hourly=wave_height,wave_period,sea_surface_temperature,sea_level_height_msl" +
         "&timezone=Europe/Paris"
       );
     }
@@ -401,7 +623,7 @@
       return intervals;
     }
 
-    // Plugin pour colorer des bandes : gris (nuit) + vert (fenêtres 15–20 kt)
+    // Plugin pour colorer des bandes : gris (nuit) + vert (fenêtres 12–20 kt)
     const highlightBandsPlugin = {
       id: "highlightBands",
       beforeDatasetsDraw(chart, args, pluginOptions) {
@@ -428,8 +650,72 @@
         ctx.save();
         // 🌙 Colonnes grisées = nuit
         drawIntervals(pluginOptions.nightIntervals, "rgba(120,120,120,0.16)");
-        // 🟢 Fenêtres 15–20 kt (par-dessus)
+        // 🟢 Fenêtres 12–20 kt (par-dessus)
         drawIntervals(pluginOptions.intervals, "rgba(76,175,80,0.22)");
+        ctx.restore();
+      }
+    };
+
+    const weekdayFormatter = new Intl.DateTimeFormat("fr-FR", {
+      weekday: "short"
+    });
+
+    const dayLabelsPlugin = {
+      id: "dayLabels",
+      afterDraw(chart, args, pluginOptions) {
+        const times = pluginOptions?.times;
+        const xScale = chart.scales.x;
+        if (!times?.length || !xScale) return;
+
+        const groups = [];
+        times.forEach((time, index) => {
+          const dateKey = time.slice(0, 10);
+          const currentGroup = groups[groups.length - 1];
+
+          if (currentGroup?.dateKey === dateKey) {
+            currentGroup.endIndex = index;
+          } else {
+            groups.push({ dateKey, startIndex: index, endIndex: index });
+          }
+        });
+
+        const { ctx, chartArea } = chart;
+        const pixelForIndex = (index) => xScale.getPixelForValue(index);
+
+        ctx.save();
+        ctx.fillStyle = "rgba(255,255,255,0.88)";
+        ctx.fillRect(chartArea.left, chartArea.top, chartArea.width, 23);
+        ctx.font = '700 11px system-ui, -apple-system, "Segoe UI", sans-serif';
+        ctx.fillStyle = "#27384a";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+
+        groups.forEach((group) => {
+          const firstPixel = pixelForIndex(group.startIndex);
+          const lastPixel = pixelForIndex(group.endIndex);
+          const left = group.startIndex === 0
+            ? chartArea.left
+            : (pixelForIndex(group.startIndex - 1) + firstPixel) / 2;
+          const right = group.endIndex === times.length - 1
+            ? chartArea.right
+            : (lastPixel + pixelForIndex(group.endIndex + 1)) / 2;
+          const date = new Date(`${group.dateKey}T12:00:00`);
+          const label = weekdayFormatter
+            .format(date)
+            .replace(".", "")
+            .toLocaleUpperCase("fr-FR");
+
+          if (group.startIndex > 0) {
+            ctx.beginPath();
+            ctx.strokeStyle = "rgba(39,56,74,0.18)";
+            ctx.moveTo(left, chartArea.top);
+            ctx.lineTo(left, chartArea.bottom);
+            ctx.stroke();
+          }
+
+          ctx.fillText(label, (left + right) / 2, chartArea.top + 12, right - left - 4);
+        });
+
         ctx.restore();
       }
     };
@@ -444,6 +730,265 @@
       });
 
       spotSelect.replaceChildren(...options);
+    }
+
+    function normalizeSearch(value) {
+      return value
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLocaleLowerCase("fr-FR")
+        .trim();
+    }
+
+    function closeSpotSuggestions() {
+      const input = document.getElementById("spotSearch");
+      const list = document.getElementById("spotSuggestions");
+
+      matchingSpots = [];
+      activeSuggestionIndex = -1;
+      list.hidden = true;
+      list.replaceChildren();
+      input.setAttribute("aria-expanded", "false");
+      input.removeAttribute("aria-activedescendant");
+    }
+
+    function updateActiveSuggestion(nextIndex) {
+      const input = document.getElementById("spotSearch");
+      const buttons = document.querySelectorAll(".spot-suggestion");
+      if (!buttons.length) return;
+
+      activeSuggestionIndex =
+        (nextIndex + buttons.length) % buttons.length;
+
+      buttons.forEach((button, index) => {
+        button.setAttribute(
+          "aria-selected",
+          String(index === activeSuggestionIndex)
+        );
+      });
+
+      const activeButton = buttons[activeSuggestionIndex];
+      input.setAttribute("aria-activedescendant", activeButton.id);
+      activeButton.scrollIntoView({ block: "nearest" });
+    }
+
+    function chooseSpotSuggestion(spot) {
+      document.getElementById("spotSearch").value = spot.nom;
+      closeSpotSuggestions();
+      selectSpot(spot.id);
+    }
+
+    function renderSpotSuggestions(query) {
+      const input = document.getElementById("spotSearch");
+      const list = document.getElementById("spotSuggestions");
+      const normalizedQuery = normalizeSearch(query);
+
+      if (!normalizedQuery) {
+        closeSpotSuggestions();
+        return;
+      }
+
+      matchingSpots = spots
+        .map((spot) => {
+          const normalizedName = normalizeSearch(spot.nom);
+          const searchableText = normalizeSearch([
+            spot.nom,
+            spot.departement,
+            spot.region,
+            spot.pays,
+            ...(spot.tags ?? [])
+          ].filter(Boolean).join(" "));
+
+          if (!searchableText.includes(normalizedQuery)) return null;
+
+          return {
+            spot,
+            rank: normalizedName.startsWith(normalizedQuery)
+              ? 0
+              : normalizedName.includes(normalizedQuery) ? 1 : 2
+          };
+        })
+        .filter(Boolean)
+        .sort((first, second) =>
+          first.rank - second.rank ||
+          first.spot.nom.localeCompare(second.spot.nom, "fr")
+        )
+        .slice(0, 6)
+        .map(({ spot }) => spot);
+
+      if (!matchingSpots.length) {
+        closeSpotSuggestions();
+        return;
+      }
+
+      const items = matchingSpots.map((spot, index) => {
+        const item = document.createElement("li");
+        const button = document.createElement("button");
+        const name = document.createElement("strong");
+        const location = document.createElement("span");
+
+        item.setAttribute("role", "none");
+        button.id = `spotSuggestion-${index}`;
+        button.type = "button";
+        button.className = "spot-suggestion";
+        button.setAttribute("role", "option");
+        button.setAttribute("aria-selected", "false");
+        button.addEventListener("pointerdown", (event) => event.preventDefault());
+        button.addEventListener("click", () => chooseSpotSuggestion(spot));
+
+        name.textContent = spot.nom;
+        location.className = "spot-suggestion-location";
+        location.textContent = `${spot.departement ?? spot.region} · ${spot.pays}`;
+
+        button.append(name, location);
+        item.append(button);
+        return item;
+      });
+
+      activeSuggestionIndex = -1;
+      list.replaceChildren(...items);
+      list.hidden = false;
+      input.setAttribute("aria-expanded", "true");
+      input.removeAttribute("aria-activedescendant");
+    }
+
+    function renderTideChart() {
+      const status = document.getElementById("tideStatus");
+      const tideData = latestTideForecast;
+      const hasData = tideData?.levels.some((level) => typeof level === "number");
+
+      if (!hasData) {
+        if (tideChart) {
+          tideChart.destroy();
+          tideChart = null;
+        }
+        status.textContent = tideData
+          ? "Données de marée indisponibles pour ce spot."
+          : "Chargement de la marée…";
+        return;
+      }
+
+      status.textContent = "";
+      const context = document.getElementById("tideChart").getContext("2d");
+      if (tideChart) tideChart.destroy();
+
+      tideChart = new Chart(context, {
+        type: "line",
+        plugins: [dayLabelsPlugin],
+        data: {
+          labels: tideData.labels,
+          datasets: [{
+            label: "Marée estimée (m)",
+            data: tideData.levels,
+            borderColor: "#247da0",
+            backgroundColor: "rgba(36,125,160,0.12)",
+            borderWidth: 2,
+            fill: true,
+            pointRadius: 0,
+            tension: 0.35,
+            spanGaps: true
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            mode: "index",
+            intersect: false
+          },
+          plugins: {
+            legend: { display: false },
+            dayLabels: { times: tideData.times },
+            tooltip: {
+              callbacks: {
+                title: (items) => formatFullDateTime(tideData.times[items[0].dataIndex]),
+                label: (item) =>
+                  `Marée estimée : ${item.parsed.y.toFixed(2)} m`
+              }
+            }
+          },
+          scales: {
+            y: {
+              title: { display: true, text: "Niveau marin (m)" }
+            }
+          }
+        }
+      });
+    }
+
+    function setTideVisibility(isVisible) {
+      const toggle = document.getElementById("tideToggle");
+      const panel = document.getElementById("tidePanel");
+
+      panel.hidden = !isVisible;
+      toggle.setAttribute("aria-expanded", String(isVisible));
+
+      if (isVisible) {
+        renderTideChart();
+      } else if (tideChart) {
+        tideChart.destroy();
+        tideChart = null;
+      }
+    }
+
+    function resizeSectionChart(sectionId) {
+      const chart = sectionId === "observationsSection" ? obsChart : forecastChart;
+      requestAnimationFrame(() => requestAnimationFrame(() => chart?.resize()));
+    }
+
+    async function openChartFullscreen(sectionId) {
+      const section = document.getElementById(sectionId);
+      if (!section) return;
+
+      activeFullscreenSection = section;
+      section.classList.add("is-chart-fullscreen");
+      document.body.classList.add("chart-fullscreen-open");
+      resizeSectionChart(sectionId);
+
+      const requestFullscreen =
+        section.requestFullscreen?.bind(section) ??
+        section.webkitRequestFullscreen?.bind(section);
+
+      if (requestFullscreen) {
+        try {
+          await requestFullscreen({ navigationUI: "hide" });
+          await globalThis.screen?.orientation?.lock?.("landscape");
+        } catch {
+          // Le mode CSS reste actif lorsque Safari refuse le plein écran natif.
+        }
+      }
+    }
+
+    async function closeChartFullscreen(exitNative = true) {
+      const section = activeFullscreenSection;
+      if (!section) return;
+
+      const sectionId = section.id;
+      activeFullscreenSection = null;
+      section.classList.remove("is-chart-fullscreen");
+      document.body.classList.remove("chart-fullscreen-open");
+
+      try {
+        globalThis.screen?.orientation?.unlock?.();
+      } catch {
+        // Certains navigateurs exposent l'API sans autoriser son utilisation.
+      }
+
+      const fullscreenElement =
+        document.fullscreenElement ?? document.webkitFullscreenElement;
+      const exitFullscreen =
+        document.exitFullscreen?.bind(document) ??
+        document.webkitExitFullscreen?.bind(document);
+
+      if (exitNative && fullscreenElement && exitFullscreen) {
+        try {
+          await exitFullscreen();
+        } catch {
+          // La classe CSS a déjà restauré l'affichage normal.
+        }
+      }
+
+      resizeSectionChart(sectionId);
     }
 
     function updateSpotInfo(spot) {
@@ -694,8 +1239,8 @@
           obsAirTemp.push(getNearestHourlyTemp(rawTimes[i]));
         }
 
-        // Intervalles verts (15–20 kt pendant ≥ 1h)
-        const obsGreenIntervals = computeGreenIntervals(obsTimes, obsS_kt, 15, 20, 1);
+        // Intervalles verts (12–20 kt pendant ≥ 1h)
+        const obsGreenIntervals = computeGreenIntervals(obsTimes, obsS_kt, 12, 20, 1);
         // Intervalles de nuit (colonnes grisées)
         const obsNightIntervals = buildNightIntervals(obsTimes);
 
@@ -765,7 +1310,7 @@
 
                     const inGreen = obsGreenIntervals.some(iv => i >= iv.startIndex && i <= iv.endIndex);
                     if (inGreen) {
-                      lines.push("🏄‍♂️💨 Fenêtre 15–20 kt");
+                      lines.push("🏄‍♂️💨 Fenêtre 12–20 kt");
                     }
 
                     const tAir = obsAirTemp[i];
@@ -817,20 +1362,25 @@
         warnings += `\n⚠️ Prévisions vent limitées à ~${availableFutureHours.toFixed(1)} h par les données hourly.`;
       }
 
-      // Préparer les vagues + température eau (si dispo)
-      let marineMap = {};
-      if (marine && marine.hourly && marine.hourly.time &&
-          marine.hourly.wave_height && marine.hourly.wave_period) {
+      // Préparer vagues, température de l'eau et hauteur de marée (si dispo).
+      const marineMap = {};
+      if (marine?.hourly?.time) {
         const mt = marine.hourly.time;
-        const mh = marine.hourly.wave_height;
-        const mp = marine.hourly.wave_period;
-        const msst = marine.hourly.sea_surface_temperature || null;
+        const mh = marine.hourly.wave_height ?? null;
+        const mp = marine.hourly.wave_period ?? null;
+        const msst = marine.hourly.sea_surface_temperature ?? null;
+        const seaLevel = marine.hourly.sea_level_height_msl ?? null;
         for (let i = 0; i < mt.length; i++) {
           marineMap[mt[i]] = {
-            h: mh[i],
-            p: mp[i],
-            t: msst ? msst[i] : null
+            h: mh?.[i] ?? null,
+            p: mp?.[i] ?? null,
+            t: msst?.[i] ?? null,
+            tide: seaLevel?.[i] ?? null
           };
+        }
+
+        if (!mh || !mp) {
+          warnings += `\nℹ️ Données vagues non disponibles ou incomplètes pour ce spot.`;
         }
       } else {
         warnings += `\nℹ️ Données vagues non disponibles ou incomplètes pour ce spot.`;
@@ -847,6 +1397,7 @@
       const rawFcWP = [];
       const rawFcTAir = [];
       const rawFcTWater = [];
+      const rawFcTide = [];
 
       for (let i=0; i<tH.length; i++) {
         const ts = new Date(tH[i]).getTime();
@@ -863,6 +1414,7 @@
           rawFcWH.push(wave ? wave.h : null);
           rawFcWP.push(wave ? wave.p : null);
           rawFcTWater.push(wave ? wave.t : null);
+          rawFcTide.push(wave ? wave.tide : null);
 
           rawFcTAir.push(typeof tAirH[i] === "number" ? tAirH[i] : null);
         }
@@ -880,6 +1432,7 @@
       const fcWP = [];
       const fcTAir = [];
       const fcTWater = [];
+      const fcTide = [];
 
       for (let i = 0; i < rawFcLabels.length; i += stepFactor) {
         fcLabels.push(rawFcLabels[i]);
@@ -893,10 +1446,11 @@
         fcWP.push(rawFcWP[i]);
         fcTAir.push(rawFcTAir[i]);
         fcTWater.push(rawFcTWater[i]);
+        fcTide.push(rawFcTide[i]);
       }
 
-      // Intervalles verts prévisions (15–20 kt pendant ≥ 1h)
-      const fcGreenIntervals = computeGreenIntervals(fcTimes, fcS_kt, 15, 20, 1);
+      // Intervalles verts prévisions (12–20 kt pendant ≥ 1h)
+      const fcGreenIntervals = computeGreenIntervals(fcTimes, fcS_kt, 12, 20, 1);
       // Intervalles de nuit pour les prévisions
       const fcNightIntervals = buildNightIntervals(fcTimes);
 
@@ -905,7 +1459,7 @@
 
       forecastChart = new Chart(ctxFc, {
         type: "line",
-        plugins: [highlightBandsPlugin],
+        plugins: [highlightBandsPlugin, dayLabelsPlugin],
         data: {
           labels: fcLabels,
           datasets: [
@@ -994,7 +1548,7 @@
 
                   const inGreen = fcGreenIntervals.some(iv => i >= iv.startIndex && i <= iv.endIndex);
                   if (inGreen) {
-                    lines.push("🏄‍♂️💨 Fenêtre 15–20 kt");
+                    lines.push("🏄‍♂️💨 Fenêtre 12–20 kt");
                   }
 
                   const tAir = fcTAir[i];
@@ -1013,6 +1567,9 @@
             highlightBands: {
               intervals: fcGreenIntervals,
               nightIntervals: fcNightIntervals
+            },
+            dayLabels: {
+              times: fcTimes
             }
           },
           scales: {
@@ -1028,6 +1585,16 @@
           }
         }
       });
+
+      latestTideForecast = {
+        labels: fcLabels,
+        times: fcTimes,
+        levels: fcTide
+      };
+
+      if (document.getElementById("tideToggle").checked) {
+        renderTideChart();
+      }
 
       status.textContent = "✅ Données mises à jour." + warnings;
     }
@@ -1048,6 +1615,59 @@
       document
         .getElementById("nearMeButton")
         .addEventListener("click", locateNearestSpot);
+
+      const searchInput = document.getElementById("spotSearch");
+      searchInput.addEventListener("input", (event) => {
+        renderSpotSuggestions(event.target.value);
+      });
+      searchInput.addEventListener("focus", (event) => {
+        if (event.target.value) renderSpotSuggestions(event.target.value);
+      });
+      searchInput.addEventListener("keydown", (event) => {
+        if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+          event.preventDefault();
+          if (document.getElementById("spotSuggestions").hidden) {
+            renderSpotSuggestions(event.currentTarget.value);
+          }
+          updateActiveSuggestion(
+            activeSuggestionIndex + (event.key === "ArrowDown" ? 1 : -1)
+          );
+        } else if (event.key === "Enter" && activeSuggestionIndex >= 0) {
+          event.preventDefault();
+          chooseSpotSuggestion(matchingSpots[activeSuggestionIndex]);
+        } else if (event.key === "Escape") {
+          closeSpotSuggestions();
+        }
+      });
+
+      document.addEventListener("click", (event) => {
+        if (!document.getElementById("spotSearchContainer").contains(event.target)) {
+          closeSpotSuggestions();
+        }
+      });
+
+      document.getElementById("tideToggle").addEventListener("change", (event) => {
+        setTideVisibility(event.target.checked);
+      });
+
+      document.querySelectorAll(".chart-fullscreen-button").forEach((button) => {
+        button.addEventListener("click", () => {
+          openChartFullscreen(button.dataset.fullscreenTarget);
+        });
+      });
+      document.querySelectorAll(".chart-close-button").forEach((button) => {
+        button.addEventListener("click", () => closeChartFullscreen());
+      });
+
+      const handleNativeFullscreenExit = () => {
+        const fullscreenElement =
+          document.fullscreenElement ?? document.webkitFullscreenElement;
+        if (!fullscreenElement && activeFullscreenSection) {
+          closeChartFullscreen(false);
+        }
+      };
+      document.addEventListener("fullscreenchange", handleNativeFullscreenExit);
+      document.addEventListener("webkitfullscreenchange", handleNativeFullscreenExit);
     }
 
     async function initializeApp() {
