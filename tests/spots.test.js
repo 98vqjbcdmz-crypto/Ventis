@@ -1,0 +1,50 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import test from "node:test";
+
+import { sortSpotsByDistance } from "../js/distance.js";
+import { validateSpots } from "../js/spots.js";
+
+const spotsUrl = new URL("../data/spots.json", import.meta.url);
+
+test("la base contient des spots valides et uniques", async () => {
+  const spots = JSON.parse(await readFile(spotsUrl, "utf8"));
+
+  assert.equal(validateSpots(spots), spots);
+  assert.equal(new Set(spots.map((spot) => spot.id)).size, spots.length);
+});
+
+test("la base couvre les principaux spots de la Manche", async () => {
+  const spots = JSON.parse(await readFile(spotsUrl, "utf8"));
+  const mancheSpots = spots.filter((spot) => spot.departement === "Manche");
+  const ids = new Set(mancheSpots.map((spot) => spot.id));
+
+  assert.ok(mancheSpots.length >= 10);
+  assert.ok(ids.has("breville-sur-mer"));
+  assert.ok(ids.has("jullouville"));
+  assert.ok(ids.has("carolles"));
+
+  mancheSpots.forEach((spot) => {
+    assert.ok(Array.isArray(spot.orientationIdeale));
+    assert.ok(Array.isArray(spot.tags));
+    assert.ok("niveau" in spot);
+    assert.ok("maree" in spot);
+    assert.ok("typePlanEau" in spot);
+  });
+});
+
+test("le classement autour de Granville retourne cinq spots cohérents", async () => {
+  const spots = JSON.parse(await readFile(spotsUrl, "utf8"));
+  const nearby = sortSpotsByDistance(
+    { latitude: 48.85, longitude: -1.58 },
+    spots
+  ).slice(0, 5);
+
+  assert.deepEqual(nearby.map((spot) => spot.id), [
+    "granville",
+    "breville-sur-mer",
+    "saint-martin-de-brehal",
+    "jullouville",
+    "carolles"
+  ]);
+});

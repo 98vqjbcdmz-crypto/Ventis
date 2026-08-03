@@ -2,6 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Vent & vagues – Observations + Prévisions (Open-Meteo)</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
@@ -69,11 +70,92 @@
     }
     .spot-row select {
       margin-right: 0;
+      min-height: 36px;
+    }
+    #nearMeButton {
+      min-height: 36px;
+      padding: 6px 12px;
+      border: 1px solid #b9c7d5;
+      border-radius: 6px;
+      background: #f0f7ff;
+      color: #17324d;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 600;
+    }
+    #nearMeButton:hover {
+      background: #e3f0ff;
+    }
+    #nearMeButton:disabled {
+      cursor: wait;
+      opacity: 0.65;
     }
     #spotInfo {
       margin-top: 6px;
       font-size: 0.9rem;
       color: #333;
+    }
+    #geolocationStatus {
+      min-height: 1.2em;
+      margin-top: 6px;
+      color: #555;
+      font-size: 0.85rem;
+    }
+    #nearbySpots {
+      max-width: 440px;
+      margin-top: 10px;
+    }
+    #nearbySpots[hidden] {
+      display: none;
+    }
+    #nearbySpotsList {
+      display: grid;
+      gap: 4px;
+      margin: 5px 0 0;
+      padding: 0;
+      list-style: none;
+    }
+    .nearby-spot-button {
+      display: flex;
+      width: 100%;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 7px 9px;
+      border: 1px solid transparent;
+      border-radius: 5px;
+      background: transparent;
+      color: #222;
+      cursor: pointer;
+      font: inherit;
+      text-align: left;
+    }
+    .nearby-spot-button:hover,
+    .nearby-spot-button[aria-current="true"] {
+      border-color: #c7d9eb;
+      background: #f0f7ff;
+    }
+    .nearby-spot-distance {
+      color: #555;
+      white-space: nowrap;
+    }
+    @media (max-width: 600px) {
+      body {
+        margin: 0;
+      }
+      .container {
+        padding: 14px;
+        border-radius: 0;
+        box-shadow: none;
+      }
+      .spot-row select {
+        flex: 1 1 160px;
+      }
+      #nearMeButton {
+        flex: 1 1 150px;
+      }
+      .chart-wrapper {
+        height: 300px;
+      }
     }
   </style>
 </head>
@@ -90,15 +172,15 @@
     <!-- Choix du spot -->
     <div class="spot-row">
       <strong>Spot :</strong>
-      <select id="spotSelect">
-        <option value="ponant">Le Ponant</option>
-        <option value="plageSud">Plage Sud</option>
-        <option value="aresquiers">Les Aresquiers</option>
-        <option value="mateille">Étang de Mateille</option>
-        <option value="travers">Le Travers</option>
-      </select>
+      <select id="spotSelect" aria-label="Spot"></select>
+      <button id="nearMeButton" type="button">📍 Autour de moi</button>
     </div>
     <div id="spotInfo"></div>
+    <div id="geolocationStatus" role="status" aria-live="polite"></div>
+    <div id="nearbySpots" hidden>
+      <strong>Spots proches</strong>
+      <ul id="nearbySpotsList"></ul>
+    </div>
 
     <!-- Paramètres d'observation / prévision -->
     <div class="controls">
@@ -166,38 +248,24 @@
     </div>
   </div>
 
-  <script>
+  <script type="module">
+    import { formatDistance, sortSpotsByDistance } from "./js/distance.js";
+    import { requestCurrentPosition } from "./js/geolocation.js";
+    import { loadSpots } from "./js/spots.js";
+    import {
+      getLastSpotId,
+      isGeolocationEnabled,
+      setGeolocationEnabled,
+      setLastSpotId
+    } from "./js/storage.js";
+
     const KMH_TO_KT = 1 / 1.852;
     let obsChart = null;
     let forecastChart = null;
-
-    const SPOTS = {
-      ponant: {
-        name: "Le Ponant",
-        lat: 43.5645589,
-        lon: 4.1173114
-      },
-      plageSud: {
-        name: "Plage Sud",
-        lat: 43.515897,
-        lon: 4.124779
-      },
-      aresquiers: {
-        name: "Les Aresquiers",
-        lat: 43.441677,
-        lon: 3.790762
-      },
-      mateille: {
-        name: "Étang de Mateille",
-        lat: 43.117870,
-        lon: 3.119518
-      },
-      travers: {
-        name: "Le Travers",
-        lat: 43.5562922,
-        lon: 4.0294910
-      }
-    };
+    let spots = [];
+    let spotsById = Object.create(null);
+    let nearbySpots = [];
+    let loadRequestVersion = 0;
 
     function buildWindUrl(lat, lon) {
       return (
@@ -359,34 +427,134 @@
       }
     };
 
+    function populateSpotSelect() {
+      const spotSelect = document.getElementById("spotSelect");
+      const options = spots.map((spot) => {
+        const option = document.createElement("option");
+        option.value = spot.id;
+        option.textContent = spot.nom;
+        return option;
+      });
+
+      spotSelect.replaceChildren(...options);
+    }
+
+    function updateSpotInfo(spot) {
+      const spotInfoDiv = document.getElementById("spotInfo");
+      spotInfoDiv.innerHTML =
+        `Spot sélectionné : <strong>${spot.nom}</strong> ` +
+        `(<a href="https://www.google.com/maps?q=${spot.latitude},${spot.longitude}" target="_blank" rel="noopener noreferrer">` +
+        `${spot.latitude.toFixed(4)}, ${spot.longitude.toFixed(4)}</a>)`;
+    }
+
+    function updateNearbySelection() {
+      const selectedSpotId = document.getElementById("spotSelect").value;
+      document.querySelectorAll(".nearby-spot-button").forEach((button) => {
+        button.setAttribute(
+          "aria-current",
+          String(button.dataset.spotId === selectedSpotId)
+        );
+      });
+    }
+
+    function selectSpot(spotId) {
+      const spot = spotsById[spotId];
+      if (!spot) return;
+
+      document.getElementById("spotSelect").value = spotId;
+      setLastSpotId(spotId);
+      updateSpotInfo(spot);
+      updateNearbySelection();
+      loadAndPlot();
+    }
+
+    function renderNearbySpots() {
+      const nearbySection = document.getElementById("nearbySpots");
+      const nearbyList = document.getElementById("nearbySpotsList");
+      const items = nearbySpots.slice(0, 5).map((spot) => {
+        const item = document.createElement("li");
+        const button = document.createElement("button");
+        const name = document.createElement("span");
+        const distance = document.createElement("span");
+
+        button.type = "button";
+        button.className = "nearby-spot-button";
+        button.dataset.spotId = spot.id;
+        button.addEventListener("click", () => selectSpot(spot.id));
+
+        name.textContent = spot.nom;
+        distance.className = "nearby-spot-distance";
+        distance.textContent = formatDistance(spot.distanceKm);
+
+        button.append(name, distance);
+        item.append(button);
+        return item;
+      });
+
+      nearbyList.replaceChildren(...items);
+      nearbySection.hidden = false;
+      updateNearbySelection();
+    }
+
+    async function locateNearestSpot() {
+      const button = document.getElementById("nearMeButton");
+      const geolocationStatus = document.getElementById("geolocationStatus");
+
+      button.disabled = true;
+      button.textContent = "Localisation…";
+      geolocationStatus.textContent = "Recherche de votre position…";
+
+      try {
+        const position = await requestCurrentPosition();
+        nearbySpots = sortSpotsByDistance(position, spots);
+        const nearestSpot = nearbySpots[0];
+
+        setGeolocationEnabled(true);
+        renderNearbySpots();
+        geolocationStatus.textContent =
+          `Spot le plus proche : ${nearestSpot.nom} ` +
+          `(${formatDistance(nearestSpot.distanceKm)}).`;
+
+        if (document.getElementById("spotSelect").value !== nearestSpot.id) {
+          selectSpot(nearestSpot.id);
+        }
+      } catch (error) {
+        if (error?.reason === "denied" || error?.reason === "unsupported") {
+          setGeolocationEnabled(false);
+        }
+        geolocationStatus.textContent =
+          error?.message ?? "Impossible de récupérer votre position.";
+      } finally {
+        button.disabled = false;
+        button.textContent = "📍 Autour de moi";
+      }
+    }
+
     async function loadAndPlot() {
+      const requestVersion = ++loadRequestVersion;
       const status = document.getElementById("status");
       const currentDiv = document.getElementById("current");
-      const spotInfoDiv = document.getElementById("spotInfo");
       status.textContent = "⏳ Chargement des données...";
       currentDiv.textContent = "";
       let warnings = "";
 
       const spotKey = document.getElementById("spotSelect").value;
-      const spot = SPOTS[spotKey];
+      const spot = spotsById[spotKey];
       if (!spot) {
         status.textContent = "❌ Spot inconnu.";
         return;
       }
 
-      // Lien cliquable Google Maps sur les coordonnées
-      spotInfoDiv.innerHTML =
-        `Spot sélectionné : <strong>${spot.name}</strong> ` +
-        `(<a href="https://www.google.com/maps?q=${spot.lat},${spot.lon}" target="_blank" rel="noopener noreferrer">` +
-        `${spot.lat.toFixed(4)}, ${spot.lon.toFixed(4)}</a>)`;
+      setLastSpotId(spotKey);
+      updateSpotInfo(spot);
 
       const obsHours = parseInt(document.getElementById("obsHours").value, 10);
       const obsStepMin = parseInt(document.getElementById("obsStep").value, 10);
       const fcHours = parseInt(document.getElementById("fcHours").value, 10);
       const fcStepHours = parseInt(document.getElementById("fcStep").value, 10);
 
-      const windUrl = buildWindUrl(spot.lat, spot.lon);
-      const marineUrl = buildMarineUrl(spot.lat, spot.lon);
+      const windUrl = buildWindUrl(spot.latitude, spot.longitude);
+      const marineUrl = buildMarineUrl(spot.latitude, spot.longitude);
 
       let data, marine;
       try {
@@ -397,10 +565,14 @@
         data = await resWind.json();
         marine = resMarine.ok ? await resMarine.json() : null;
       } catch (e) {
+        if (requestVersion !== loadRequestVersion) return;
         status.textContent = "❌ Erreur réseau : " + e;
         console.error(e);
         return;
       }
+
+      // Ignore une réponse devenue obsolète après un changement rapide de spot.
+      if (requestVersion !== loadRequestVersion) return;
 
       if (!data.current || !data.current.time) {
         status.textContent = "❌ Réponse API inattendue (pas de current.time).";
@@ -855,28 +1027,51 @@
 
     // Recharger dès qu'on change un paramètre
     function attachAutoReload() {
-      ["spotSelect","obsHours","obsStep","fcHours","fcStep"].forEach(id => {
+      document.getElementById("spotSelect").addEventListener("change", (event) => {
+        selectSpot(event.target.value);
+      });
+
+      ["obsHours","obsStep","fcHours","fcStep"].forEach(id => {
         const el = document.getElementById(id);
         if (el) {
           el.addEventListener("change", loadAndPlot);
         }
       });
+
+      document
+        .getElementById("nearMeButton")
+        .addEventListener("click", locateNearestSpot);
     }
 
-    // Initialisation : Ponant par défaut + attach events + premier chargement
-    (function initSpotInfo() {
-      const spotSelect = document.getElementById("spotSelect");
-      spotSelect.value = "ponant";
-      const spot = SPOTS[spotSelect.value];
-      if (spot) {
-        document.getElementById("spotInfo").innerHTML =
-          `Spot sélectionné : <strong>${spot.name}</strong> ` +
-          `(<a href="https://www.google.com/maps?q=${spot.lat},${spot.lon}" target="_blank" rel="noopener noreferrer">` +
-          `${spot.lat.toFixed(4)}, ${spot.lon.toFixed(4)}</a>)`;
+    async function initializeApp() {
+      const status = document.getElementById("status");
+
+      try {
+        spots = await loadSpots();
+        spotsById = Object.fromEntries(spots.map((spot) => [spot.id, spot]));
+      } catch (error) {
+        status.textContent =
+          "❌ Impossible de charger la base des spots. Réessayez plus tard.";
+        console.error(error);
+        return;
       }
+
+      populateSpotSelect();
+
+      const savedSpotId = getLastSpotId();
+      const initialSpotId = spotsById[savedSpotId] ? savedSpotId : "ponant";
+      document.getElementById("spotSelect").value = initialSpotId;
+      updateSpotInfo(spotsById[initialSpotId]);
+
       attachAutoReload();
       loadAndPlot();
-    })();
+
+      if (isGeolocationEnabled()) {
+        locateNearestSpot();
+      }
+    }
+
+    initializeApp();
   </script>
 </body>
 </html>
