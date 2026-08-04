@@ -90,6 +90,53 @@ export function normalizeWaterLevels(payload, expectedSiteId) {
   });
 }
 
+export function normalizeTideCycles(payload, expectedSiteId) {
+  if (
+    payload?.site_id !== expectedSiteId ||
+    payload?.unit !== "m" ||
+    !Array.isArray(payload?.data)
+  ) {
+    throw new TypeError(`Réponse des cycles invalide pour ${expectedSiteId}.`);
+  }
+
+  const cycles = payload.data.flatMap((day) => {
+    if (
+      typeof day?.date !== "string" ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(day.date) ||
+      !Array.isArray(day.extrema)
+    ) {
+      throw new TypeError(`Jour de marée invalide pour ${expectedSiteId}.`);
+    }
+
+    return day.extrema
+      .filter((extremum) => extremum?.type === "PM")
+      .map((extremum) => {
+        if (
+          typeof extremum.time !== "string" ||
+          !/^\d{2}:\d{2}$/.test(extremum.time) ||
+          !Number.isFinite(extremum.height) ||
+          extremum.height < 0 ||
+          !Number.isFinite(extremum.coef) ||
+          extremum.coef < 0
+        ) {
+          throw new TypeError(`Cycle de marée invalide pour ${expectedSiteId}.`);
+        }
+
+        return {
+          time: `${day.date}T${extremum.time}`,
+          height: extremum.height,
+          coefficient: extremum.coef
+        };
+      });
+  });
+
+  if (!cycles.length) {
+    throw new TypeError(`Aucun cycle de marée pour ${expectedSiteId}.`);
+  }
+
+  return cycles;
+}
+
 export async function buildTideCache({ apiKey, now = new Date() }) {
   if (!apiKey) {
     throw new Error("Le secret TIDE_API_KEY est absent.");
@@ -119,11 +166,12 @@ export async function buildTideCache({ apiKey, now = new Date() }) {
   )].sort();
   const fromDate = formatLocalDate(now);
   const toDate = addCalendarDays(fromDate, 9);
+  const extremaToDate = addCalendarDays(fromDate, 8);
 
   const siteEntries = await Promise.all(requiredSiteIds.map(async (siteId) => {
     const site = tideSites.find((candidate) => candidate.siteId === siteId);
-    const url = new URL("/water-levels", API_BASE_URL);
-    url.search = new URLSearchParams({
+    const waterLevelsUrl = new URL("/water-levels", API_BASE_URL);
+    waterLevelsUrl.search = new URLSearchParams({
       site: siteId,
       from: `${fromDate}T00:00`,
       to: `${toDate}T00:00`,
@@ -131,13 +179,25 @@ export async function buildTideCache({ apiKey, now = new Date() }) {
       tz: TIME_ZONE,
       key: apiKey
     });
+    const extremaUrl = new URL("/tide-extrema", API_BASE_URL);
+    extremaUrl.search = new URLSearchParams({
+      site: siteId,
+      from: fromDate,
+      to: extremaToDate,
+      tz: TIME_ZONE,
+      key: apiKey
+    });
 
-    const payload = await fetchJson(url, `Marée ${siteId}`);
+    const [waterLevels, extrema] = await Promise.all([
+      fetchJson(waterLevelsUrl, `Hauteurs de marée ${siteId}`),
+      fetchJson(extremaUrl, `Cycles de marée ${siteId}`)
+    ]);
     return [siteId, {
-      siteName: payload.site_name ?? site.siteName,
+      siteName: waterLevels.site_name ?? site.siteName,
       latitude: site.latitude,
       longitude: site.longitude,
-      data: normalizeWaterLevels(payload, siteId)
+      data: normalizeWaterLevels(waterLevels, siteId),
+      cycles: normalizeTideCycles(extrema, siteId)
     }];
   }));
 

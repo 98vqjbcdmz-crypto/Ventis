@@ -28,6 +28,23 @@ export function validateTideCache(cache) {
         throw new TypeError(`Hauteur de marée invalide pour ${siteId}.`);
       }
     });
+
+    if (site.cycles !== undefined && !Array.isArray(site.cycles)) {
+      throw new TypeError(`Cycles de marée invalides pour ${siteId}.`);
+    }
+
+    (site.cycles ?? []).forEach((cycle) => {
+      if (
+        !isRecord(cycle) ||
+        typeof cycle.time !== "string" ||
+        !Number.isFinite(cycle.height) ||
+        cycle.height < 0 ||
+        !Number.isFinite(cycle.coefficient) ||
+        cycle.coefficient < 0
+      ) {
+        throw new TypeError(`Cycle de marée invalide pour ${siteId}.`);
+      }
+    });
   });
 
   Object.entries(cache.spots).forEach(([spotId, mapping]) => {
@@ -56,6 +73,42 @@ export async function loadTideCache(
   return validateTideCache(await response.json());
 }
 
+function localDateTimeValue(value) {
+  const match = String(value).slice(0, 16).match(
+    /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/
+  );
+  if (!match) return Number.NaN;
+
+  return Date.UTC(
+    Number(match[1]),
+    Number(match[2]) - 1,
+    Number(match[3]),
+    Number(match[4]),
+    Number(match[5])
+  );
+}
+
+export function findNearestTideCoefficient(cycles, time) {
+  const target = localDateTimeValue(time);
+  if (!Number.isFinite(target) || !Array.isArray(cycles)) return null;
+
+  let nearestCoefficient = null;
+  let nearestDifference = Number.POSITIVE_INFINITY;
+
+  cycles.forEach((cycle) => {
+    const cycleTime = localDateTimeValue(cycle.time);
+    if (!Number.isFinite(cycleTime) || !Number.isFinite(cycle.coefficient)) return;
+
+    const difference = Math.abs(cycleTime - target);
+    if (difference < nearestDifference) {
+      nearestDifference = difference;
+      nearestCoefficient = cycle.coefficient;
+    }
+  });
+
+  return nearestCoefficient;
+}
+
 export function getTideSeries(cache, spotId, forecastTimes) {
   if (!cache || !Array.isArray(forecastTimes)) return null;
 
@@ -69,11 +122,15 @@ export function getTideSeries(cache, spotId, forecastTimes) {
   const heights = forecastTimes.map(
     (time) => heightsByLocalTime.get(time.slice(0, 16)) ?? null
   );
+  const coefficients = forecastTimes.map(
+    (time) => findNearestTideCoefficient(site.cycles, time)
+  );
 
   if (!heights.some(Number.isFinite)) return null;
 
   return {
     heights,
+    coefficients,
     siteId: mapping.siteId,
     siteName: site.siteName,
     distanceKm: mapping.distanceKm,

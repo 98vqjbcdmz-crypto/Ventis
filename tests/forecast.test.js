@@ -20,4 +20,10 @@ test("les prévisions n'utilisent pas le niveau marin MSL comme hauteur de maré
     html,
     /x: \{\s*ticks: \{ display: false \},\s*border: \{ display: false \}/
   );
+  assert.match(html, /@media \(orientation: portrait\)/);
+  assert.match(html, /transform: rotate\(90deg\)/);
+  assert.match(html, /matchMedia\?\.\("\(orientation: portrait\)"\)\.matches/);
+  assert.match(html, /afterDatasetsDraw\(chart, args, pluginOptions\)/);
+  assert.doesNotMatch(html, /afterDraw\(chart, args, pluginOptions\)/);
+  assert.match(html, /coef\. estimé/);
 });

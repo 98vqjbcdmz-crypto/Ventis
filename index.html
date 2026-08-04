@@ -148,6 +148,20 @@
     body.chart-fullscreen-open {
       overflow: hidden;
     }
+    @media (orientation: portrait) {
+      .chart-section.is-chart-fullscreen {
+        inset: auto !important;
+        top: 0 !important;
+        left: 100vw !important;
+        left: 100dvw !important;
+        width: 100vh !important;
+        width: 100dvh !important;
+        height: 100vw !important;
+        height: 100dvw !important;
+        transform: rotate(90deg) !important;
+        transform-origin: top left !important;
+      }
+    }
     .chart-wrapper {
       margin-top: 10px;
       height: 340px;
@@ -673,7 +687,7 @@
 
     const dayLabelsPlugin = {
       id: "dayLabels",
-      afterDraw(chart, args, pluginOptions) {
+      afterDatasetsDraw(chart, args, pluginOptions) {
         const times = pluginOptions?.times;
         const xScale = chart.scales.x;
         if (!times?.length || !xScale) return;
@@ -945,6 +959,10 @@
       section.classList.add("is-chart-fullscreen");
       document.body.classList.add("chart-fullscreen-open");
       resizeSectionChart(sectionId);
+
+      // En portrait, le plein écran CSS garantit le paysage même si iOS
+      // refuse l'API d'orientation ou si le navigateur neutralise la rotation.
+      if (globalThis.matchMedia?.("(orientation: portrait)").matches) return;
 
       const requestFullscreen =
         section.requestFullscreen?.bind(section) ??
@@ -1580,8 +1598,12 @@
                     return (p != null) ? `⏱️ Période vagues : ${p.toFixed(1)} s` : "⏱️ Période vagues : n.d.";
                   } else if (ctx.dataset.id === "tide") {
                     const height = ctx.raw;
+                    const coefficient = activeTideSeries?.coefficients[i];
                     return Number.isFinite(height)
-                      ? `Marée : ${height.toFixed(2)} m`
+                      ? `Marée : ${height.toFixed(2)} m` +
+                        (Number.isFinite(coefficient)
+                          ? ` · coef. estimé ${Math.round(coefficient)}`
+                          : "")
                       : "Marée : n.d.";
                   }
                   return label + " : " + ctx.formattedValue;
@@ -1626,7 +1648,7 @@
                   );
                   return tideDatasetIndex >= 0 &&
                     forecastChart.isDatasetVisible(tideDatasetIndex)
-                    ? "Marée : api-maree.fr · Ifremer/PREVIMER · CC BY 4.0"
+                    ? "Marée/coef. : api-maree.fr · Ifremer/PREVIMER · CC BY 4.0"
                     : "";
                 }
               }

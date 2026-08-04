@@ -3,12 +3,14 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 import {
+  findNearestTideCoefficient,
   getTideSeries,
   loadTideCache,
   validateTideCache
 } from "../js/tides.js";
 import {
   mapSpotsToTideSites,
+  normalizeTideCycles,
   normalizeWaterLevels
 } from "../scripts/fetch-tides.mjs";
 
@@ -24,6 +26,10 @@ const validCache = {
       data: [
         { time: "2026-08-04T10:00:00+02:00", height: 2.8 },
         { time: "2026-08-04T11:00:00+02:00", height: 3.1 }
+      ],
+      cycles: [
+        { time: "2026-08-04T06:00", height: 9.2, coefficient: 72 },
+        { time: "2026-08-04T18:00", height: 10.1, coefficient: 84 }
       ]
     }
   }
@@ -45,8 +51,45 @@ test("les hauteurs sont alignées sur les heures locales des prévisions", () =>
   ]);
 
   assert.deepEqual(series.heights, [2.8, 3.1, null]);
+  assert.deepEqual(series.coefficients, [72, 72, 72]);
   assert.equal(series.siteName, "Granville");
   assert.equal(series.distanceKm, 1.2);
+});
+
+test("le coefficient correspond à la pleine mer la plus proche", () => {
+  const cycles = validCache.sites.granville.cycles;
+
+  assert.equal(findNearestTideCoefficient(cycles, "2026-08-04T10:00"), 72);
+  assert.equal(findNearestTideCoefficient(cycles, "2026-08-04T16:00"), 84);
+  assert.equal(findNearestTideCoefficient(cycles, "date invalide"), null);
+});
+
+test("les pleines mers de l'API sont normalisées en cycles", () => {
+  const cycles = normalizeTideCycles({
+    site_id: "granville",
+    unit: "m",
+    data: [{
+      date: "2026-08-04",
+      extrema: [
+        { type: "PM", time: "06:12", height: 9.2, coef: 72 },
+        { type: "BM", time: "12:25", height: 1.8 },
+        { type: "PM", time: "18:40", height: 10.1, coef: 84 }
+      ]
+    }]
+  }, "granville");
+
+  assert.deepEqual(cycles, [
+    {
+      time: "2026-08-04T06:12",
+      height: 9.2,
+      coefficient: 72
+    },
+    {
+      time: "2026-08-04T18:40",
+      height: 10.1,
+      coefficient: 84
+    }
+  ]);
 });
 
 test("un spot sans port de référence n'affiche pas de marée", () => {
