@@ -26,4 +26,6 @@ test("les prévisions n'utilisent pas le niveau marin MSL comme hauteur de maré
   assert.match(html, /afterDatasetsDraw\(chart, args, pluginOptions\)/);
   assert.doesNotMatch(html, /afterDraw\(chart, args, pluginOptions\)/);
   assert.match(html, /coef\. estimé/);
+  assert.match(html, /orientation\?\.lock\?\.\("portrait-primary"\)/);
+  assert.match(html, /await lockHomeOrientation\(\)/);
 });

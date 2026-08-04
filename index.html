@@ -951,6 +951,16 @@
       requestAnimationFrame(() => requestAnimationFrame(() => chart?.resize()));
     }
 
+    async function lockHomeOrientation() {
+      if (activeFullscreenSection) return;
+
+      try {
+        await globalThis.screen?.orientation?.lock?.("portrait-primary");
+      } catch {
+        // Le manifeste PWA conserve le portrait lorsque l'API est indisponible.
+      }
+    }
+
     async function openChartFullscreen(sectionId) {
       const section = document.getElementById(sectionId);
       if (!section) return;
@@ -1007,6 +1017,7 @@
         }
       }
 
+      await lockHomeOrientation();
       resizeSectionChart(sectionId);
     }
 
@@ -1786,10 +1797,14 @@
       };
       document.addEventListener("fullscreenchange", handleNativeFullscreenExit);
       document.addEventListener("webkitfullscreenchange", handleNativeFullscreenExit);
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden) lockHomeOrientation();
+      });
     }
 
     async function initializeApp() {
       const status = document.getElementById("status");
+      lockHomeOrientation();
 
       try {
         spots = await loadSpots();
