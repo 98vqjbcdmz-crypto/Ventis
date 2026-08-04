@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-08-04T00:36:26.766Z",
-  "expiresAt": "2026-08-04T07:36:26.766Z",
+  "generatedAt": "2026-08-04T08:37:24.261Z",
+  "expiresAt": "2026-08-04T15:37:24.261Z",
   "source": "api-maree.fr",
   "sourceUrl": "https://api-maree.fr/",
   "attribution": "Données de marée fournies par api-maree.fr, calculées à partir de composantes harmoniques Ifremer / PREVIMER, sous licence Creative Commons Attribution 4.0 International.",
@@ -920,6 +920,93 @@
           "time": "2026-08-12T23:00:00+02:00",
           "height": 8.156
         }
+      ],
+      "cycles": [
+        {
+          "time": "2026-08-04T11:28",
+          "height": 11.894,
+          "coefficient": 73
+        },
+        {
+          "time": "2026-08-04T23:45",
+          "height": 11.903,
+          "coefficient": 69
+        },
+        {
+          "time": "2026-08-05T12:07",
+          "height": 11.479,
+          "coefficient": 65
+        },
+        {
+          "time": "2026-08-06T00:28",
+          "height": 11.346,
+          "coefficient": 60
+        },
+        {
+          "time": "2026-08-06T12:54",
+          "height": 10.9,
+          "coefficient": 56
+        },
+        {
+          "time": "2026-08-07T01:20",
+          "height": 10.631,
+          "coefficient": 51
+        },
+        {
+          "time": "2026-08-07T13:54",
+          "height": 10.236,
+          "coefficient": 47
+        },
+        {
+          "time": "2026-08-08T02:32",
+          "height": 9.93,
+          "coefficient": 45
+        },
+        {
+          "time": "2026-08-08T15:23",
+          "height": 9.804,
+          "coefficient": 45
+        },
+        {
+          "time": "2026-08-09T04:20",
+          "height": 9.776,
+          "coefficient": 48
+        },
+        {
+          "time": "2026-08-09T17:10",
+          "height": 10.171,
+          "coefficient": 53
+        },
+        {
+          "time": "2026-08-10T05:52",
+          "height": 10.47,
+          "coefficient": 60
+        },
+        {
+          "time": "2026-08-10T18:23",
+          "height": 11.1,
+          "coefficient": 67
+        },
+        {
+          "time": "2026-08-11T06:54",
+          "height": 11.43,
+          "coefficient": 75
+        },
+        {
+          "time": "2026-08-11T19:17",
+          "height": 12.087,
+          "coefficient": 82
+        },
+        {
+          "time": "2026-08-12T07:44",
+          "height": 12.295,
+          "coefficient": 89
+        },
+        {
+          "time": "2026-08-12T20:04",
+          "height": 12.888,
+          "coefficient": 94
+        }
       ]
     },
     "cherbourg": {
@@ -1790,6 +1877,98 @@
         {
           "time": "2026-08-12T23:00:00+02:00",
           "height": 5.769
+        }
+      ],
+      "cycles": [
+        {
+          "time": "2026-08-04T00:45",
+          "height": 5.881,
+          "coefficient": 77
+        },
+        {
+          "time": "2026-08-04T13:09",
+          "height": 5.666,
+          "coefficient": 73
+        },
+        {
+          "time": "2026-08-05T01:23",
+          "height": 5.691,
+          "coefficient": 69
+        },
+        {
+          "time": "2026-08-05T13:51",
+          "height": 5.475,
+          "coefficient": 65
+        },
+        {
+          "time": "2026-08-06T02:09",
+          "height": 5.417,
+          "coefficient": 60
+        },
+        {
+          "time": "2026-08-06T14:42",
+          "height": 5.223,
+          "coefficient": 56
+        },
+        {
+          "time": "2026-08-07T03:09",
+          "height": 5.096,
+          "coefficient": 51
+        },
+        {
+          "time": "2026-08-07T15:51",
+          "height": 4.979,
+          "coefficient": 47
+        },
+        {
+          "time": "2026-08-08T04:33",
+          "height": 4.85,
+          "coefficient": 45
+        },
+        {
+          "time": "2026-08-08T17:27",
+          "height": 4.909,
+          "coefficient": 45
+        },
+        {
+          "time": "2026-08-09T06:19",
+          "height": 4.9,
+          "coefficient": 48
+        },
+        {
+          "time": "2026-08-09T18:57",
+          "height": 5.13,
+          "coefficient": 53
+        },
+        {
+          "time": "2026-08-10T07:38",
+          "height": 5.219,
+          "coefficient": 60
+        },
+        {
+          "time": "2026-08-10T20:03",
+          "height": 5.513,
+          "coefficient": 67
+        },
+        {
+          "time": "2026-08-11T08:38",
+          "height": 5.615,
+          "coefficient": 75
+        },
+        {
+          "time": "2026-08-11T20:56",
+          "height": 5.917,
+          "coefficient": 82
+        },
+        {
+          "time": "2026-08-12T09:28",
+          "height": 5.969,
+          "coefficient": 89
+        },
+        {
+          "time": "2026-08-12T21:43",
+          "height": 6.253,
+          "coefficient": 94
         }
       ]
     },
@@ -2662,6 +2841,93 @@
           "time": "2026-08-12T23:00:00+02:00",
           "height": 7.038
         }
+      ],
+      "cycles": [
+        {
+          "time": "2026-08-04T12:04",
+          "height": 8.588,
+          "coefficient": 73
+        },
+        {
+          "time": "2026-08-05T00:21",
+          "height": 8.605,
+          "coefficient": 69
+        },
+        {
+          "time": "2026-08-05T12:45",
+          "height": 8.26,
+          "coefficient": 65
+        },
+        {
+          "time": "2026-08-06T01:05",
+          "height": 8.171,
+          "coefficient": 60
+        },
+        {
+          "time": "2026-08-06T13:34",
+          "height": 7.843,
+          "coefficient": 56
+        },
+        {
+          "time": "2026-08-07T02:02",
+          "height": 7.661,
+          "coefficient": 51
+        },
+        {
+          "time": "2026-08-07T14:41",
+          "height": 7.425,
+          "coefficient": 47
+        },
+        {
+          "time": "2026-08-08T03:23",
+          "height": 7.248,
+          "coefficient": 45
+        },
+        {
+          "time": "2026-08-08T16:15",
+          "height": 7.266,
+          "coefficient": 45
+        },
+        {
+          "time": "2026-08-09T05:05",
+          "height": 7.28,
+          "coefficient": 48
+        },
+        {
+          "time": "2026-08-09T17:47",
+          "height": 7.605,
+          "coefficient": 53
+        },
+        {
+          "time": "2026-08-10T06:27",
+          "height": 7.779,
+          "coefficient": 60
+        },
+        {
+          "time": "2026-08-10T18:55",
+          "height": 8.246,
+          "coefficient": 67
+        },
+        {
+          "time": "2026-08-11T07:28",
+          "height": 8.438,
+          "coefficient": 75
+        },
+        {
+          "time": "2026-08-11T19:50",
+          "height": 8.932,
+          "coefficient": 82
+        },
+        {
+          "time": "2026-08-12T08:18",
+          "height": 9.042,
+          "coefficient": 89
+        },
+        {
+          "time": "2026-08-12T20:37",
+          "height": 9.502,
+          "coefficient": 94
+        }
       ]
     },
     "granville": {
@@ -3532,6 +3798,93 @@
         {
           "time": "2026-08-12T23:00:00+02:00",
           "height": 8.207
+        }
+      ],
+      "cycles": [
+        {
+          "time": "2026-08-04T11:31",
+          "height": 11.715,
+          "coefficient": 73
+        },
+        {
+          "time": "2026-08-04T23:48",
+          "height": 11.73,
+          "coefficient": 69
+        },
+        {
+          "time": "2026-08-05T12:10",
+          "height": 11.309,
+          "coefficient": 65
+        },
+        {
+          "time": "2026-08-06T00:31",
+          "height": 11.183,
+          "coefficient": 60
+        },
+        {
+          "time": "2026-08-06T12:57",
+          "height": 10.743,
+          "coefficient": 56
+        },
+        {
+          "time": "2026-08-07T01:23",
+          "height": 10.482,
+          "coefficient": 51
+        },
+        {
+          "time": "2026-08-07T13:57",
+          "height": 10.094,
+          "coefficient": 47
+        },
+        {
+          "time": "2026-08-08T02:35",
+          "height": 9.796,
+          "coefficient": 45
+        },
+        {
+          "time": "2026-08-08T15:26",
+          "height": 9.673,
+          "coefficient": 45
+        },
+        {
+          "time": "2026-08-09T04:23",
+          "height": 9.646,
+          "coefficient": 48
+        },
+        {
+          "time": "2026-08-09T17:13",
+          "height": 10.034,
+          "coefficient": 53
+        },
+        {
+          "time": "2026-08-10T05:56",
+          "height": 10.324,
+          "coefficient": 60
+        },
+        {
+          "time": "2026-08-10T18:26",
+          "height": 10.944,
+          "coefficient": 67
+        },
+        {
+          "time": "2026-08-11T06:58",
+          "height": 11.264,
+          "coefficient": 75
+        },
+        {
+          "time": "2026-08-11T19:21",
+          "height": 11.911,
+          "coefficient": 82
+        },
+        {
+          "time": "2026-08-12T07:48",
+          "height": 12.113,
+          "coefficient": 89
+        },
+        {
+          "time": "2026-08-12T20:07",
+          "height": 12.698,
+          "coefficient": 94
         }
       ]
     },
@@ -4404,6 +4757,98 @@
           "time": "2026-08-12T23:00:00+02:00",
           "height": 5.526
         }
+      ],
+      "cycles": [
+        {
+          "time": "2026-08-04T00:29",
+          "height": 5.77,
+          "coefficient": 77
+        },
+        {
+          "time": "2026-08-04T12:53",
+          "height": 5.545,
+          "coefficient": 73
+        },
+        {
+          "time": "2026-08-05T01:07",
+          "height": 5.585,
+          "coefficient": 69
+        },
+        {
+          "time": "2026-08-05T13:35",
+          "height": 5.362,
+          "coefficient": 65
+        },
+        {
+          "time": "2026-08-06T01:53",
+          "height": 5.323,
+          "coefficient": 60
+        },
+        {
+          "time": "2026-08-06T14:26",
+          "height": 5.127,
+          "coefficient": 56
+        },
+        {
+          "time": "2026-08-07T02:53",
+          "height": 5.019,
+          "coefficient": 51
+        },
+        {
+          "time": "2026-08-07T15:36",
+          "height": 4.904,
+          "coefficient": 47
+        },
+        {
+          "time": "2026-08-08T04:19",
+          "height": 4.79,
+          "coefficient": 45
+        },
+        {
+          "time": "2026-08-08T17:11",
+          "height": 4.849,
+          "coefficient": 45
+        },
+        {
+          "time": "2026-08-09T06:02",
+          "height": 4.84,
+          "coefficient": 48
+        },
+        {
+          "time": "2026-08-09T18:40",
+          "height": 5.068,
+          "coefficient": 53
+        },
+        {
+          "time": "2026-08-10T07:22",
+          "height": 5.146,
+          "coefficient": 60
+        },
+        {
+          "time": "2026-08-10T19:47",
+          "height": 5.444,
+          "coefficient": 67
+        },
+        {
+          "time": "2026-08-11T08:23",
+          "height": 5.533,
+          "coefficient": 75
+        },
+        {
+          "time": "2026-08-11T20:42",
+          "height": 5.842,
+          "coefficient": 82
+        },
+        {
+          "time": "2026-08-12T09:14",
+          "height": 5.879,
+          "coefficient": 89
+        },
+        {
+          "time": "2026-08-12T21:29",
+          "height": 6.17,
+          "coefficient": 94
+        }
       ]
     },
     "pointe-d-agon": {
@@ -5274,6 +5719,93 @@
         {
           "time": "2026-08-12T23:00:00+02:00",
           "height": 8.459
+        }
+      ],
+      "cycles": [
+        {
+          "time": "2026-08-04T11:36",
+          "height": 11.684,
+          "coefficient": 73
+        },
+        {
+          "time": "2026-08-04T23:54",
+          "height": 11.702,
+          "coefficient": 69
+        },
+        {
+          "time": "2026-08-05T12:16",
+          "height": 11.282,
+          "coefficient": 65
+        },
+        {
+          "time": "2026-08-06T00:37",
+          "height": 11.157,
+          "coefficient": 60
+        },
+        {
+          "time": "2026-08-06T13:03",
+          "height": 10.715,
+          "coefficient": 56
+        },
+        {
+          "time": "2026-08-07T01:29",
+          "height": 10.453,
+          "coefficient": 51
+        },
+        {
+          "time": "2026-08-07T14:03",
+          "height": 10.063,
+          "coefficient": 47
+        },
+        {
+          "time": "2026-08-08T02:41",
+          "height": 9.761,
+          "coefficient": 45
+        },
+        {
+          "time": "2026-08-08T15:32",
+          "height": 9.635,
+          "coefficient": 45
+        },
+        {
+          "time": "2026-08-09T04:30",
+          "height": 9.606,
+          "coefficient": 48
+        },
+        {
+          "time": "2026-08-09T17:21",
+          "height": 9.997,
+          "coefficient": 53
+        },
+        {
+          "time": "2026-08-10T06:04",
+          "height": 10.287,
+          "coefficient": 60
+        },
+        {
+          "time": "2026-08-10T18:34",
+          "height": 10.903,
+          "coefficient": 67
+        },
+        {
+          "time": "2026-08-11T07:05",
+          "height": 11.219,
+          "coefficient": 75
+        },
+        {
+          "time": "2026-08-11T19:28",
+          "height": 11.858,
+          "coefficient": 82
+        },
+        {
+          "time": "2026-08-12T07:55",
+          "height": 12.055,
+          "coefficient": 89
+        },
+        {
+          "time": "2026-08-12T20:14",
+          "height": 12.634,
+          "coefficient": 94
         }
       ]
     },
@@ -6146,6 +6678,98 @@
           "time": "2026-08-12T23:00:00+02:00",
           "height": 6.743
         }
+      ],
+      "cycles": [
+        {
+          "time": "2026-08-04T01:43",
+          "height": 6.496,
+          "coefficient": 77
+        },
+        {
+          "time": "2026-08-04T14:08",
+          "height": 6.312,
+          "coefficient": 73
+        },
+        {
+          "time": "2026-08-05T02:27",
+          "height": 6.269,
+          "coefficient": 69
+        },
+        {
+          "time": "2026-08-05T14:53",
+          "height": 6.072,
+          "coefficient": 65
+        },
+        {
+          "time": "2026-08-06T03:16",
+          "height": 5.943,
+          "coefficient": 60
+        },
+        {
+          "time": "2026-08-06T15:46",
+          "height": 5.76,
+          "coefficient": 56
+        },
+        {
+          "time": "2026-08-07T04:15",
+          "height": 5.577,
+          "coefficient": 51
+        },
+        {
+          "time": "2026-08-07T16:52",
+          "height": 5.464,
+          "coefficient": 47
+        },
+        {
+          "time": "2026-08-08T05:35",
+          "height": 5.31,
+          "coefficient": 45
+        },
+        {
+          "time": "2026-08-08T18:27",
+          "height": 5.364,
+          "coefficient": 45
+        },
+        {
+          "time": "2026-08-09T07:44",
+          "height": 5.394,
+          "coefficient": 48
+        },
+        {
+          "time": "2026-08-09T20:16",
+          "height": 5.635,
+          "coefficient": 53
+        },
+        {
+          "time": "2026-08-10T08:59",
+          "height": 5.771,
+          "coefficient": 60
+        },
+        {
+          "time": "2026-08-10T21:17",
+          "height": 6.051,
+          "coefficient": 67
+        },
+        {
+          "time": "2026-08-11T09:51",
+          "height": 6.169,
+          "coefficient": 75
+        },
+        {
+          "time": "2026-08-11T22:04",
+          "height": 6.45,
+          "coefficient": 82
+        },
+        {
+          "time": "2026-08-12T10:35",
+          "height": 6.501,
+          "coefficient": 89
+        },
+        {
+          "time": "2026-08-12T22:46",
+          "height": 6.757,
+          "coefficient": 94
+        }
       ]
     },
     "surtainville": {
@@ -7016,6 +7640,93 @@
         {
           "time": "2026-08-12T23:00:00+02:00",
           "height": 7.243
+        }
+      ],
+      "cycles": [
+        {
+          "time": "2026-08-04T11:57",
+          "height": 9.255,
+          "coefficient": 73
+        },
+        {
+          "time": "2026-08-05T00:14",
+          "height": 9.269,
+          "coefficient": 69
+        },
+        {
+          "time": "2026-08-05T12:37",
+          "height": 8.903,
+          "coefficient": 65
+        },
+        {
+          "time": "2026-08-06T00:58",
+          "height": 8.802,
+          "coefficient": 60
+        },
+        {
+          "time": "2026-08-06T13:26",
+          "height": 8.446,
+          "coefficient": 56
+        },
+        {
+          "time": "2026-08-07T01:53",
+          "height": 8.244,
+          "coefficient": 51
+        },
+        {
+          "time": "2026-08-07T14:31",
+          "height": 7.972,
+          "coefficient": 47
+        },
+        {
+          "time": "2026-08-08T03:12",
+          "height": 7.769,
+          "coefficient": 45
+        },
+        {
+          "time": "2026-08-08T16:04",
+          "height": 7.762,
+          "coefficient": 45
+        },
+        {
+          "time": "2026-08-09T04:56",
+          "height": 7.774,
+          "coefficient": 48
+        },
+        {
+          "time": "2026-08-09T17:39",
+          "height": 8.119,
+          "coefficient": 53
+        },
+        {
+          "time": "2026-08-10T06:20",
+          "height": 8.322,
+          "coefficient": 60
+        },
+        {
+          "time": "2026-08-10T18:48",
+          "height": 8.826,
+          "coefficient": 67
+        },
+        {
+          "time": "2026-08-11T07:21",
+          "height": 9.048,
+          "coefficient": 75
+        },
+        {
+          "time": "2026-08-11T19:43",
+          "height": 9.579,
+          "coefficient": 82
+        },
+        {
+          "time": "2026-08-12T08:11",
+          "height": 9.71,
+          "coefficient": 89
+        },
+        {
+          "time": "2026-08-12T20:30",
+          "height": 10.201,
+          "coefficient": 94
         }
       ]
     }
