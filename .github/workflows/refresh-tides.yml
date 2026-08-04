@@ -1,0 +1,43 @@
+name: Actualiser les marées
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 */6 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-tides
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    environment: TIDE_API_KEY
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+
+      - name: Installer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Générer le cache de marées
+        env:
+          TIDE_API_KEY: ${{ secrets.TIDE_API_KEY }}
+        run: node scripts/fetch-tides.mjs
+
+      - name: Publier le cache mis à jour
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/tides.json
+          if git diff --cached --quiet; then
+            echo "Le cache est déjà à jour."
+            exit 0
+          fi
+          git commit -m "data: refresh tide cache [skip ci]"
+          git push

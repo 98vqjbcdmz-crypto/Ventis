@@ -8,5 +8,7 @@ test("les prévisions n'utilisent pas le niveau marin MSL comme hauteur de maré
   const html = await readFile(indexUrl, "utf8");
 
   assert.doesNotMatch(html, /sea_level_height_msl/);
-  assert.doesNotMatch(html, /tideCaution|yTide/);
+  assert.match(html, /id="tideOverlayButton"/);
+  assert.match(html, /hidden: true,[\s\S]*yAxisID: "yTide"/);
+  assert.match(html, /threshold: 3/);
 });
