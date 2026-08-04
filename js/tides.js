@@ -1,5 +1,5 @@
 export const TIDE_CACHE_URL =
-  "https://raw.githubusercontent.com/98vqjbcdmz-crypto/Ventis/main/data/tides.json";
+  new URL("../data/tides.json", import.meta.url).href;
 
 export const TIDE_ATTRIBUTION =
   "Données de marée fournies par api-maree.fr, calculées à partir de composantes harmoniques Ifremer / PREVIMER, sous licence Creative Commons Attribution 4.0 International.";
@@ -79,8 +79,8 @@ export async function loadTideCache(
   url = TIDE_CACHE_URL
 ) {
   const separator = url.includes("?") ? "&" : "?";
-  const hourlyVersion = Math.floor(Date.now() / 3_600_000);
-  const response = await fetchImpl(`${url}${separator}v=${hourlyVersion}`, {
+  const requestVersion = Date.now();
+  const response = await fetchImpl(`${url}${separator}v=${requestVersion}`, {
     cache: "no-store"
   });
 

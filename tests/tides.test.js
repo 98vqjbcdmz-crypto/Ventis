@@ -50,6 +50,13 @@ const validCache = {
   }
 };
 
+test("le cache de marée est chargé depuis le même site que l'application", async () => {
+  const { TIDE_CACHE_URL } = await import("../js/tides.js");
+
+  assert.match(TIDE_CACHE_URL, /\/data\/tides\.json$/);
+  assert.doesNotMatch(TIDE_CACHE_URL, /raw\.githubusercontent\.com/);
+});
+
 test("le cache fourni avec l'application est valide", async () => {
   const content = await readFile(
     new URL("../data/tides.json", import.meta.url),
@@ -221,6 +228,7 @@ test("le chargement du cache contourne le cache navigateur", async () => {
   }, "https://example.test/tides.json");
 
   assert.match(requestedUrl, /tides\.json\?v=\d+$/);
+  assert.ok(Number(requestedUrl.match(/v=(\d+)$/)[1]) > 1_000_000_000_000);
   assert.equal(requestedOptions.cache, "no-store");
   assert.equal(loaded, validCache);
 });
