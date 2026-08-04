@@ -295,11 +295,6 @@
       color: #555;
       white-space: nowrap;
     }
-    .forecast-note {
-      margin: 6px 0 0;
-      color: #66717b;
-      font-size: 0.82rem;
-    }
     @media (max-width: 600px) {
       body {
         margin: 0;
@@ -440,10 +435,6 @@
       <div class="chart-wrapper">
         <canvas id="forecastChart"></canvas>
       </div>
-      <p class="forecast-note">
-        Marée estimée masquée par défaut : toucher son libellé barré pour la superposer.
-        Zone rose sous 3 m : prudence. Modèle indicatif, à ne pas utiliser pour la navigation.
-      </p>
     </section>
   </div>
 
@@ -459,7 +450,6 @@
     } from "./js/storage.js";
 
     const KMH_TO_KT = 1 / 1.852;
-    const TIDE_CAUTION_LEVEL = 3;
     let obsChart = null;
     let forecastChart = null;
     let spots = [];
@@ -487,7 +477,7 @@
         "https://marine-api.open-meteo.com/v1/marine" +
         "?latitude=" + encodeURIComponent(lat) +
         "&longitude=" + encodeURIComponent(lon) +
-        "&hourly=wave_height,wave_period,sea_surface_temperature,sea_level_height_msl" +
+        "&hourly=wave_height,wave_period,sea_surface_temperature" +
         "&timezone=Europe/Paris"
       );
     }
@@ -626,37 +616,6 @@
         drawIntervals(pluginOptions.nightIntervals, "rgba(120,120,120,0.16)");
         // 🟢 Fenêtres 12–20 kt (par-dessus)
         drawIntervals(pluginOptions.intervals, "rgba(76,175,80,0.22)");
-        ctx.restore();
-      }
-    };
-
-    const tideCautionPlugin = {
-      id: "tideCaution",
-      beforeDatasetsDraw(chart, args, pluginOptions) {
-        const tideDatasetIndex = chart.data.datasets.findIndex(
-          (dataset) => dataset.yAxisID === "yTide"
-        );
-        if (tideDatasetIndex < 0 || !chart.isDatasetVisible(tideDatasetIndex)) return;
-
-        const tideScale = chart.scales.yTide;
-        if (!tideScale) return;
-
-        const threshold = pluginOptions?.threshold ?? TIDE_CAUTION_LEVEL;
-        const { ctx, chartArea } = chart;
-        const thresholdPixel = tideScale.getPixelForValue(threshold);
-        const top = Math.max(
-          chartArea.top,
-          Math.min(thresholdPixel, chartArea.bottom)
-        );
-
-        ctx.save();
-        ctx.fillStyle = "rgba(236, 72, 153, 0.13)";
-        ctx.fillRect(
-          chartArea.left,
-          top,
-          chartArea.width,
-          chartArea.bottom - top
-        );
         ctx.restore();
       }
     };
@@ -1301,20 +1260,18 @@
         warnings += `\n⚠️ Prévisions vent limitées à ~${availableFutureHours.toFixed(1)} h par les données hourly.`;
       }
 
-      // Préparer vagues, température de l'eau et hauteur de marée (si dispo).
+      // Préparer les vagues et la température de l'eau (si dispo).
       const marineMap = {};
       if (marine?.hourly?.time) {
         const mt = marine.hourly.time;
         const mh = marine.hourly.wave_height ?? null;
         const mp = marine.hourly.wave_period ?? null;
         const msst = marine.hourly.sea_surface_temperature ?? null;
-        const seaLevel = marine.hourly.sea_level_height_msl ?? null;
         for (let i = 0; i < mt.length; i++) {
           marineMap[mt[i]] = {
             h: mh?.[i] ?? null,
             p: mp?.[i] ?? null,
-            t: msst?.[i] ?? null,
-            tide: seaLevel?.[i] ?? null
+            t: msst?.[i] ?? null
           };
         }
 
@@ -1336,7 +1293,6 @@
       const rawFcWP = [];
       const rawFcTAir = [];
       const rawFcTWater = [];
-      const rawFcTide = [];
 
       for (let i=0; i<tH.length; i++) {
         const ts = new Date(tH[i]).getTime();
@@ -1353,7 +1309,6 @@
           rawFcWH.push(wave ? wave.h : null);
           rawFcWP.push(wave ? wave.p : null);
           rawFcTWater.push(wave ? wave.t : null);
-          rawFcTide.push(wave ? wave.tide : null);
 
           rawFcTAir.push(typeof tAirH[i] === "number" ? tAirH[i] : null);
         }
@@ -1371,7 +1326,6 @@
       const fcWP = [];
       const fcTAir = [];
       const fcTWater = [];
-      const fcTide = [];
 
       for (let i = 0; i < rawFcLabels.length; i += stepFactor) {
         fcLabels.push(rawFcLabels[i]);
@@ -1385,7 +1339,6 @@
         fcWP.push(rawFcWP[i]);
         fcTAir.push(rawFcTAir[i]);
         fcTWater.push(rawFcTWater[i]);
-        fcTide.push(rawFcTide[i]);
       }
 
       // Intervalles verts prévisions (12–20 kt pendant ≥ 1h)
@@ -1398,7 +1351,7 @@
 
       forecastChart = new Chart(ctxFc, {
         type: "line",
-        plugins: [highlightBandsPlugin, tideCautionPlugin, dayLabelsPlugin],
+        plugins: [highlightBandsPlugin, dayLabelsPlugin],
         data: {
           labels: fcLabels,
           datasets: [
@@ -1436,18 +1389,6 @@
               tension: 0.2,
               pointRadius: 2,
               yAxisID: "y2"
-            },
-            {
-              label: "Marée estimée (m)",
-              data: fcTide,
-              borderColor: "#247da0",
-              backgroundColor: "rgba(36,125,160,0.12)",
-              borderWidth: 2,
-              tension: 0.35,
-              pointRadius: 0,
-              spanGaps: true,
-              hidden: true,
-              yAxisID: "yTide"
             }
           ]
         },
@@ -1487,9 +1428,6 @@
                   } else if (label.startsWith("⏱️")) {
                     const p = fcWP[i];
                     return (p != null) ? `⏱️ Période vagues : ${p.toFixed(1)} s` : "⏱️ Période vagues : n.d.";
-                  } else if (label.startsWith("Marée")) {
-                    const tide = fcTide[i];
-                    return (tide != null) ? `Marée estimée : ${tide.toFixed(2)} m` : "Marée estimée : n.d.";
                   }
                   return label + " : " + ctx.formattedValue;
                 },
@@ -1513,19 +1451,6 @@
                   if (typeof tWater === "number") {
                     lines.push(`🌡️ Eau : ${tWater.toFixed(1)} °C`);
                   }
-                  const tide = fcTide[i];
-                  const tideDatasetIndex = forecastChart?.data.datasets.findIndex(
-                    (dataset) => dataset.yAxisID === "yTide"
-                  );
-                  if (
-                    tideDatasetIndex >= 0 &&
-                    forecastChart.isDatasetVisible(tideDatasetIndex) &&
-                    typeof tide === "number" &&
-                    tide < TIDE_CAUTION_LEVEL
-                  ) {
-                    lines.push("⚠️ Prudence : marée < 3 m");
-                  }
-
                   return lines;
                 }
               }
@@ -1536,9 +1461,6 @@
             },
             dayLabels: {
               times: fcTimes
-            },
-            tideCaution: {
-              threshold: TIDE_CAUTION_LEVEL
             }
           },
           scales: {
@@ -1549,13 +1471,6 @@
             y2: {
               position: "right",
               title: { display: true, text: "Vagues (m / s)" },
-              grid: { drawOnChartArea: false }
-            },
-            yTide: {
-              display: "auto",
-              position: "right",
-              offset: true,
-              title: { display: true, text: "Marée (m)" },
               grid: { drawOnChartArea: false }
             }
           }
