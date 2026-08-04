@@ -152,15 +152,6 @@
       margin-top: 10px;
       height: 340px;
     }
-    .tide-attribution {
-      margin: 7px 0 0;
-      color: #66717b;
-      font-size: 0.72rem;
-      line-height: 1.35;
-    }
-    .tide-attribution a {
-      color: inherit;
-    }
     canvas {
       background: #fff;
     }
@@ -487,13 +478,6 @@
       <div class="chart-wrapper">
         <canvas id="forecastChart"></canvas>
       </div>
-      <p class="tide-attribution" id="tideAttribution" hidden>
-        Port de référence : <strong id="tideReferenceSite"></strong>.
-        Données de marée fournies par
-        <a href="https://api-maree.fr/" target="_blank" rel="noopener noreferrer">api-maree.fr</a>,
-        calculées à partir de composantes harmoniques Ifremer / PREVIMER,
-        sous licence Creative Commons Attribution 4.0 International.
-      </p>
     </section>
   </div>
 
@@ -790,21 +774,16 @@
 
     function updateTideControl(tideSeries = null, visible = false) {
       const button = document.getElementById("tideOverlayButton");
-      const attribution = document.getElementById("tideAttribution");
       activeTideSeries = tideSeries;
 
       button.disabled = !tideSeries;
       button.classList.toggle("is-active", Boolean(tideSeries && visible));
       button.setAttribute("aria-pressed", String(Boolean(tideSeries && visible)));
       button.title = tideSeries
-        ? visible ? "Masquer la marée" : "Afficher la marée"
+        ? visible
+          ? `Masquer la marée · Source api-maree.fr (${tideSeries.siteName})`
+          : `Afficher la marée · Source api-maree.fr (${tideSeries.siteName})`
         : "Marée indisponible pour ce spot";
-      attribution.hidden = !tideSeries || !visible;
-
-      if (tideSeries) {
-        document.getElementById("tideReferenceSite").textContent =
-          `${tideSeries.siteName} (${formatDistance(tideSeries.distanceKm)} du spot)`;
-      }
     }
 
     function toggleTideOverlay() {
@@ -1502,6 +1481,8 @@
             {
               label: "💨 Vent moyen (kt)",
               data: fcS_kt,
+              borderColor: "rgb(54, 162, 235)",
+              backgroundColor: "rgba(54, 162, 235, 0.18)",
               borderWidth: 2,
               tension: 0.2,
               pointRadius: 2,
@@ -1510,6 +1491,8 @@
             {
               label: "💥 Rafales (kt)",
               data: fcG_kt,
+              borderColor: "rgb(255, 99, 132)",
+              backgroundColor: "rgba(255, 99, 132, 0.18)",
               borderWidth: 2,
               borderDash: [5,5],
               tension: 0.2,
@@ -1519,6 +1502,8 @@
             {
               label: "🌊 Hauteur vagues (m)",
               data: fcWH,
+              borderColor: "rgb(255, 159, 64)",
+              backgroundColor: "rgba(255, 159, 64, 0.18)",
               borderWidth: 1.5,
               borderDash: [4,2],
               tension: 0.2,
@@ -1528,6 +1513,8 @@
             {
               label: "⏱️ Période vagues (s)",
               data: fcWP,
+              borderColor: "rgb(255, 205, 86)",
+              backgroundColor: "rgba(255, 205, 86, 0.18)",
               borderWidth: 1.5,
               borderDash: [2,2],
               tension: 0.2,
@@ -1632,6 +1619,15 @@
                     lines.push("Prudence : hauteur d'eau inférieure à 3 m");
                   }
                   return lines;
+                },
+                footer: () => {
+                  const tideDatasetIndex = forecastChart.data.datasets.findIndex(
+                    (dataset) => dataset.id === "tide"
+                  );
+                  return tideDatasetIndex >= 0 &&
+                    forecastChart.isDatasetVisible(tideDatasetIndex)
+                    ? "Marée : api-maree.fr · Ifremer/PREVIMER · CC BY 4.0"
+                    : "";
                 }
               }
             },
