@@ -513,6 +513,10 @@
     import { dismissTooltipOnClickPlugin } from "./js/chart-interactions.js";
     import { formatDistance, sortSpotsByDistance } from "./js/distance.js";
     import { requestCurrentPosition } from "./js/geolocation.js";
+    import {
+      formatDailyPrecipitation,
+      summarizeDailyPrecipitation
+    } from "./js/precipitation.js";
     import { loadSpots } from "./js/spots.js?v=2";
     import { getTideSeries, loadTideCache } from "./js/tides.js";
     import {
@@ -542,7 +546,7 @@
         "&longitude=" + encodeURIComponent(lon) +
         "&current=wind_speed_10m,wind_direction_10m,wind_gusts_10m,temperature_2m" +
         "&minutely_15=wind_speed_10m,wind_direction_10m,wind_gusts_10m" +
-        "&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m,temperature_2m" +
+        "&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m,temperature_2m,precipitation_probability,precipitation" +
         "&timezone=Europe/Paris"
       );
     }
@@ -723,7 +727,7 @@
 
         ctx.save();
         ctx.fillStyle = "rgba(255,255,255,0.88)";
-        ctx.fillRect(chartArea.left, chartArea.top, chartArea.width, 23);
+        ctx.fillRect(chartArea.left, chartArea.top, chartArea.width, 35);
         ctx.font = '700 11px system-ui, -apple-system, "Segoe UI", sans-serif';
         ctx.fillStyle = "#27384a";
         ctx.textAlign = "center";
@@ -752,7 +756,24 @@
             ctx.stroke();
           }
 
-          ctx.fillText(label, (left + right) / 2, chartArea.top + 12, right - left - 4);
+          const center = (left + right) / 2;
+          ctx.fillText(label, center, chartArea.top + 9, right - left - 4);
+
+          const precipitationLabel = formatDailyPrecipitation(
+            pluginOptions.precipitationByDay?.[group.dateKey]
+          );
+          if (precipitationLabel) {
+            ctx.font = '600 8px system-ui, -apple-system, "Segoe UI", sans-serif';
+            ctx.fillStyle = "#247da0";
+            ctx.fillText(
+              precipitationLabel,
+              center,
+              chartArea.top + 25,
+              right - left - 3
+            );
+            ctx.font = '700 11px system-ui, -apple-system, "Segoe UI", sans-serif';
+            ctx.fillStyle = "#27384a";
+          }
         });
 
         ctx.restore();
@@ -1411,6 +1432,8 @@
       const gH_kmh = data.hourly.wind_gusts_10m;
       const dH = data.hourly.wind_direction_10m;
       const tAirH = data.hourly.temperature_2m || [];
+      const precipitationProbabilityH = data.hourly.precipitation_probability || [];
+      const precipitationH = data.hourly.precipitation || [];
 
       const lastAvailableMs = new Date(tH[tH.length - 1]).getTime();
       const endMsRequested = now + fcHours * 3600 * 1000;
@@ -1454,6 +1477,8 @@
       const rawFcWP = [];
       const rawFcTAir = [];
       const rawFcTWater = [];
+      const rawFcPrecipitationProbability = [];
+      const rawFcPrecipitation = [];
 
       for (let i=0; i<tH.length; i++) {
         const ts = new Date(tH[i]).getTime();
@@ -1472,8 +1497,22 @@
           rawFcTWater.push(wave ? wave.t : null);
 
           rawFcTAir.push(typeof tAirH[i] === "number" ? tAirH[i] : null);
+          rawFcPrecipitationProbability.push(
+            typeof precipitationProbabilityH[i] === "number"
+              ? precipitationProbabilityH[i]
+              : null
+          );
+          rawFcPrecipitation.push(
+            typeof precipitationH[i] === "number" ? precipitationH[i] : null
+          );
         }
       }
+
+      const precipitationByDay = summarizeDailyPrecipitation(
+        rawFcTimes,
+        rawFcPrecipitationProbability,
+        rawFcPrecipitation
+      );
 
       const stepFactor = Math.max(1, fcStepHours);
       const fcLabels = [];
@@ -1683,7 +1722,8 @@
               nightIntervals: fcNightIntervals
             },
             dayLabels: {
-              times: fcTimes
+              times: fcTimes,
+              precipitationByDay
             },
             tideCaution: {
               threshold: 3

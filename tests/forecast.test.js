@@ -34,4 +34,7 @@ test("les prévisions n'utilisent pas le niveau marin MSL comme hauteur de maré
   );
   assert.match(html, /body:not\(\.chart-fullscreen-open\) \.container/);
   assert.match(html, /width: min\(100dvh, 430px\)/);
+  assert.match(html, /precipitation_probability,precipitation/);
+  assert.match(html, /summarizeDailyPrecipitation/);
+  assert.match(html, /precipitationByDay/);
 });
