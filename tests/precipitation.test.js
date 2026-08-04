@@ -3,7 +3,8 @@ import test from "node:test";
 
 import {
   formatDailyPrecipitation,
-  summarizeDailyPrecipitation
+  summarizeDailyPrecipitation,
+  summarizePrecipitationWindow
 } from "../js/precipitation.js";
 
 test("les précipitations sont cumulées par jour avec la probabilité maximale", () => {
@@ -50,4 +51,26 @@ test("les données météo manquantes restent explicites", () => {
     formatDailyPrecipitation(summaries["2026-08-04"]),
     "–% · – mm"
   );
+});
+
+test("le résumé 24 h ignore le passé et les heures plus lointaines", () => {
+  const summary = summarizePrecipitationWindow(
+    [
+      "2026-08-04T11:00",
+      "2026-08-04T13:00",
+      "2026-08-05T12:00",
+      "2026-08-05T13:00"
+    ],
+    [95, 30, 80, 100],
+    [9, 0.2, 1.3, 12],
+    "2026-08-04T12:00",
+    24
+  );
+
+  assert.deepEqual(summary, {
+    probabilityMax: 80,
+    amountMm: 1.5,
+    hasAmount: true
+  });
+  assert.equal(formatDailyPrecipitation(summary), "80% · 1,5 mm");
 });

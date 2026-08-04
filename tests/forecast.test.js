@@ -37,4 +37,11 @@ test("les prévisions n'utilisent pas le niveau marin MSL comme hauteur de maré
   assert.match(html, /precipitation_probability,precipitation/);
   assert.match(html, /summarizeDailyPrecipitation/);
   assert.match(html, /precipitationByDay/);
+  assert.match(html, /Pluie 24 h/);
+  assert.match(html, /getCurrentTideState/);
+  assert.match(html, /current-conditions-extra/);
+  assert.match(html, /pleine mer/);
+  assert.match(html, /basse mer/);
+  assert.match(html, /js\/precipitation\.js\?v=2/);
+  assert.match(html, /js\/tides\.js\?v=2/);
 });

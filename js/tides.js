@@ -45,6 +45,24 @@ export function validateTideCache(cache) {
         throw new TypeError(`Cycle de marée invalide pour ${siteId}.`);
       }
     });
+
+    if (site.extrema !== undefined && !Array.isArray(site.extrema)) {
+      throw new TypeError(`Extrêmes de marée invalides pour ${siteId}.`);
+    }
+
+    (site.extrema ?? []).forEach((extremum) => {
+      if (
+        !isRecord(extremum) ||
+        !["PM", "BM"].includes(extremum.type) ||
+        typeof extremum.time !== "string" ||
+        !Number.isFinite(extremum.height) ||
+        extremum.height < 0 ||
+        (extremum.type === "PM" &&
+          (!Number.isFinite(extremum.coefficient) || extremum.coefficient < 0))
+      ) {
+        throw new TypeError(`Extrême de marée invalide pour ${siteId}.`);
+      }
+    });
   });
 
   Object.entries(cache.spots).forEach(([spotId, mapping]) => {
@@ -107,6 +125,75 @@ export function findNearestTideCoefficient(cycles, time) {
   });
 
   return nearestCoefficient;
+}
+
+function deriveTideExtrema(points) {
+  const extrema = [];
+
+  for (let index = 1; index < points.length - 1; index += 1) {
+    const previous = points[index - 1];
+    const current = points[index];
+    const next = points[index + 1];
+
+    if (current.height >= previous.height && current.height > next.height) {
+      extrema.push({ ...current, type: "PM" });
+    } else if (
+      current.height <= previous.height &&
+      current.height < next.height
+    ) {
+      extrema.push({ ...current, type: "BM" });
+    }
+  }
+
+  return extrema;
+}
+
+export function getCurrentTideState(cache, spotId, time) {
+  const mapping = cache?.spots?.[spotId];
+  const site = mapping ? cache?.sites?.[mapping.siteId] : null;
+  const target = localDateTimeValue(time);
+
+  if (
+    !site?.data?.length ||
+    !Number.isFinite(mapping?.distanceKm) ||
+    mapping.distanceKm >= 100 ||
+    !Number.isFinite(target)
+  ) return null;
+
+  const points = site.data
+    .map((point) => ({ ...point, value: localDateTimeValue(point.time) }))
+    .filter((point) => Number.isFinite(point.value))
+    .sort((first, second) => first.value - second.value);
+  const previous = [...points].reverse().find((point) => point.value <= target);
+  const next = points.find((point) => point.value >= target);
+  if (!previous || !next) return null;
+
+  const duration = next.value - previous.value;
+  const progress = duration > 0 ? (target - previous.value) / duration : 0;
+  const height = previous.height + (next.height - previous.height) * progress;
+
+  const extrema = (site.extrema?.length
+    ? site.extrema
+    : deriveTideExtrema(points)
+  )
+    .map((extremum) => ({
+      ...extremum,
+      value: localDateTimeValue(extremum.time)
+    }))
+    .filter((extremum) => Number.isFinite(extremum.value))
+    .sort((first, second) => first.value - second.value);
+  const nextExtremum = extrema.find((extremum) => extremum.value > target);
+  if (!nextExtremum) return null;
+
+  return {
+    height,
+    direction: nextExtremum.type === "PM" ? "rising" : "falling",
+    coefficient: findNearestTideCoefficient(site.cycles, time),
+    nextEventType: nextExtremum.type,
+    nextEventTime: nextExtremum.time,
+    siteName: site.siteName,
+    distanceKm: mapping.distanceKm
+  };
 }
 
 export function getTideSeries(cache, spotId, forecastTimes) {

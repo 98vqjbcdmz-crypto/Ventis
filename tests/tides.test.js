@@ -4,6 +4,7 @@ import test from "node:test";
 
 import {
   findNearestTideCoefficient,
+  getCurrentTideState,
   getTideSeries,
   loadTideCache,
   validateTideCache
@@ -11,6 +12,7 @@ import {
 import {
   mapSpotsToTideSites,
   normalizeTideCycles,
+  normalizeTideExtrema,
   normalizeWaterLevels
 } from "../scripts/fetch-tides.mjs";
 
@@ -25,7 +27,20 @@ const validCache = {
       siteName: "Granville",
       data: [
         { time: "2026-08-04T10:00:00+02:00", height: 2.8 },
-        { time: "2026-08-04T11:00:00+02:00", height: 3.1 }
+        { time: "2026-08-04T11:00:00+02:00", height: 3.2 },
+        { time: "2026-08-04T12:00:00+02:00", height: 4.8 },
+        { time: "2026-08-04T13:00:00+02:00", height: 4.1 },
+        { time: "2026-08-04T14:00:00+02:00", height: 3.4 }
+      ],
+      extrema: [
+        { type: "BM", time: "2026-08-04T09:40", height: 2.6 },
+        {
+          type: "PM",
+          time: "2026-08-04T12:15",
+          height: 4.9,
+          coefficient: 72
+        },
+        { type: "BM", time: "2026-08-04T15:20", height: 2.9 }
       ],
       cycles: [
         { time: "2026-08-04T06:00", height: 9.2, coefficient: 72 },
@@ -50,7 +65,7 @@ test("les hauteurs sont alignées sur les heures locales des prévisions", () =>
     "2026-08-04T12:00"
   ]);
 
-  assert.deepEqual(series.heights, [2.8, 3.1, null]);
+  assert.deepEqual(series.heights, [2.8, 3.2, 4.8]);
   assert.deepEqual(series.coefficients, [72, 72, 72]);
   assert.equal(series.siteName, "Granville");
   assert.equal(series.distanceKm, 1.2);
@@ -90,6 +105,82 @@ test("les pleines mers de l'API sont normalisées en cycles", () => {
       coefficient: 84
     }
   ]);
+});
+
+test("les pleines et basses mers de l'API sont conservées", () => {
+  const extrema = normalizeTideExtrema({
+    site_id: "granville",
+    unit: "m",
+    data: [{
+      date: "2026-08-04",
+      extrema: [
+        { type: "PM", time: "06:12", height: 9.2, coef: 72 },
+        { type: "BM", time: "12:25", height: 1.8 }
+      ]
+    }]
+  }, "granville");
+
+  assert.deepEqual(extrema, [
+    {
+      type: "PM",
+      time: "2026-08-04T06:12",
+      height: 9.2,
+      coefficient: 72
+    },
+    { type: "BM", time: "2026-08-04T12:25", height: 1.8 }
+  ]);
+});
+
+test("l'état courant interpole la hauteur et indique la prochaine pleine mer", () => {
+  const state = getCurrentTideState(
+    validCache,
+    "granville",
+    "2026-08-04T11:30"
+  );
+
+  assert.equal(state.height, 4);
+  assert.equal(state.direction, "rising");
+  assert.equal(state.coefficient, 72);
+  assert.equal(state.nextEventType, "PM");
+  assert.equal(state.nextEventTime, "2026-08-04T12:15");
+});
+
+test("l'état courant indique la prochaine basse mer pendant la descente", () => {
+  const state = getCurrentTideState(
+    validCache,
+    "granville",
+    "2026-08-04T13:30"
+  );
+
+  assert.equal(state.height, 3.75);
+  assert.equal(state.direction, "falling");
+  assert.equal(state.nextEventType, "BM");
+  assert.equal(state.nextEventTime, "2026-08-04T15:20");
+});
+
+test("un ancien cache déduit le prochain extrême depuis les hauteurs", () => {
+  const legacyCache = structuredClone(validCache);
+  delete legacyCache.sites.granville.extrema;
+
+  const state = getCurrentTideState(
+    legacyCache,
+    "granville",
+    "2026-08-04T11:30"
+  );
+
+  assert.equal(state.direction, "rising");
+  assert.equal(state.nextEventType, "PM");
+  assert.equal(state.nextEventTime, "2026-08-04T12:00:00+02:00");
+});
+
+test("la marée courante est masquée à partir de 100 km", () => {
+  const distantCache = structuredClone(validCache);
+  distantCache.spots.granville.distanceKm = 100;
+
+  assert.equal(
+    getCurrentTideState(distantCache, "granville", "2026-08-04T11:30"),
+    null
+  );
 });
 
 test("un spot sans port de référence n'affiche pas de marée", () => {

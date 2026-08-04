@@ -43,6 +43,11 @@
       background: #f0f7ff;
       font-size: 0.95rem;
     }
+    .current-conditions-extra {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(36, 125, 160, 0.16);
+    }
     h2 {
       margin-top: 24px;
       font-size: 1.1rem;
@@ -515,10 +520,15 @@
     import { requestCurrentPosition } from "./js/geolocation.js";
     import {
       formatDailyPrecipitation,
-      summarizeDailyPrecipitation
-    } from "./js/precipitation.js";
+      summarizeDailyPrecipitation,
+      summarizePrecipitationWindow
+    } from "./js/precipitation.js?v=2";
     import { loadSpots } from "./js/spots.js?v=2";
-    import { getTideSeries, loadTideCache } from "./js/tides.js";
+    import {
+      getCurrentTideState,
+      getTideSeries,
+      loadTideCache
+    } from "./js/tides.js?v=2";
     import {
       getLastSpotId,
       isGeolocationEnabled,
@@ -580,6 +590,29 @@
         hour: "2-digit",
         minute: "2-digit"
       });
+    }
+
+    function formatCurrentTide(tideState, currentTime) {
+      if (!tideState) return "";
+
+      const rising = tideState.direction === "rising";
+      const eventName = tideState.nextEventType === "PM"
+        ? "pleine mer"
+        : "basse mer";
+      const eventDay = tideState.nextEventTime.slice(0, 10) ===
+        String(currentTime).slice(0, 10)
+        ? ""
+        : "demain ";
+      const coefficient = Number.isFinite(tideState.coefficient)
+        ? Math.round(tideState.coefficient)
+        : "–";
+
+      return (
+        `<strong>🌊 Marée :</strong> ${tideState.height.toFixed(2)} m · ` +
+        `${rising ? "montante ↗" : "descendante ↘"} · ` +
+        `coef. ${coefficient} · ${eventName} ${eventDay}à ` +
+        tideState.nextEventTime.slice(11, 16)
+      );
     }
 
     // 16 points cardinaux : vent VENANT DE
@@ -1230,7 +1263,44 @@
       if (typeof tempCurrent === "number") {
         currentHtml += `<br>🌡️ Air : ${tempCurrent.toFixed(1)} °C`;
       }
-      currentDiv.innerHTML = currentHtml;
+
+      const rainNext24Hours = summarizePrecipitationWindow(
+        data.hourly?.time ?? [],
+        data.hourly?.precipitation_probability ?? [],
+        data.hourly?.precipitation ?? [],
+        data.current.time,
+        24
+      );
+      const rainNext24HoursLabel = formatDailyPrecipitation(rainNext24Hours);
+      let currentTideState = null;
+
+      function renderCurrentConditions() {
+        const extraLines = [];
+        if (rainNext24HoursLabel) {
+          extraLines.push(
+            `<strong>🌧️ Pluie 24 h :</strong> ` +
+            rainNext24HoursLabel.replace(" · ", " max · ")
+          );
+        }
+
+        const tideLabel = formatCurrentTide(currentTideState, data.current.time);
+        if (tideLabel) extraLines.push(tideLabel);
+
+        currentDiv.innerHTML = currentHtml + (extraLines.length
+          ? `<div class="current-conditions-extra">${extraLines.join("<br>")}</div>`
+          : "");
+      }
+
+      renderCurrentConditions();
+      tideCacheRequest.then((cache) => {
+        if (requestVersion !== loadRequestVersion) return;
+        currentTideState = getCurrentTideState(
+          cache,
+          spotKey,
+          data.current.time
+        );
+        renderCurrentConditions();
+      });
 
       /* -------- Données horaires (pour température air) -------- */
       const hourlyTimes = (data.hourly && data.hourly.time) ? data.hourly.time : [];

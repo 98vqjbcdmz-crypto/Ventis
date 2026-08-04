@@ -90,16 +90,16 @@ export function normalizeWaterLevels(payload, expectedSiteId) {
   });
 }
 
-export function normalizeTideCycles(payload, expectedSiteId) {
+export function normalizeTideExtrema(payload, expectedSiteId) {
   if (
     payload?.site_id !== expectedSiteId ||
     payload?.unit !== "m" ||
     !Array.isArray(payload?.data)
   ) {
-    throw new TypeError(`Réponse des cycles invalide pour ${expectedSiteId}.`);
+    throw new TypeError(`Réponse des extrêmes invalide pour ${expectedSiteId}.`);
   }
 
-  const cycles = payload.data.flatMap((day) => {
+  const extrema = payload.data.flatMap((day) => {
     if (
       typeof day?.date !== "string" ||
       !/^\d{4}-\d{2}-\d{2}$/.test(day.date) ||
@@ -108,33 +108,43 @@ export function normalizeTideCycles(payload, expectedSiteId) {
       throw new TypeError(`Jour de marée invalide pour ${expectedSiteId}.`);
     }
 
-    return day.extrema
-      .filter((extremum) => extremum?.type === "PM")
-      .map((extremum) => {
-        if (
-          typeof extremum.time !== "string" ||
-          !/^\d{2}:\d{2}$/.test(extremum.time) ||
-          !Number.isFinite(extremum.height) ||
-          extremum.height < 0 ||
-          !Number.isFinite(extremum.coef) ||
-          extremum.coef < 0
-        ) {
-          throw new TypeError(`Cycle de marée invalide pour ${expectedSiteId}.`);
-        }
+    return day.extrema.map((extremum) => {
+      if (
+        !["PM", "BM"].includes(extremum?.type) ||
+        typeof extremum.time !== "string" ||
+        !/^\d{2}:\d{2}$/.test(extremum.time) ||
+        !Number.isFinite(extremum.height) ||
+        extremum.height < 0 ||
+        (extremum.type === "PM" &&
+          (!Number.isFinite(extremum.coef) || extremum.coef < 0))
+      ) {
+        throw new TypeError(`Extrême de marée invalide pour ${expectedSiteId}.`);
+      }
 
-        return {
-          time: `${day.date}T${extremum.time}`,
-          height: extremum.height,
-          coefficient: extremum.coef
-        };
-      });
+      return {
+        type: extremum.type,
+        time: `${day.date}T${extremum.time}`,
+        height: extremum.height,
+        ...(extremum.type === "PM" ? { coefficient: extremum.coef } : {})
+      };
+    });
   });
 
-  if (!cycles.length) {
-    throw new TypeError(`Aucun cycle de marée pour ${expectedSiteId}.`);
+  if (!extrema.length) {
+    throw new TypeError(`Aucun extrême de marée pour ${expectedSiteId}.`);
   }
 
-  return cycles;
+  return extrema;
+}
+
+export function normalizeTideCycles(payload, expectedSiteId) {
+  return normalizeTideExtrema(payload, expectedSiteId)
+    .filter((extremum) => extremum.type === "PM")
+    .map(({ time, height, coefficient }) => ({
+      time,
+      height,
+      coefficient
+    }));
 }
 
 export async function buildTideCache({ apiKey, now = new Date() }) {
@@ -192,12 +202,20 @@ export async function buildTideCache({ apiKey, now = new Date() }) {
       fetchJson(waterLevelsUrl, `Hauteurs de marée ${siteId}`),
       fetchJson(extremaUrl, `Cycles de marée ${siteId}`)
     ]);
+    const normalizedExtrema = normalizeTideExtrema(extrema, siteId);
     return [siteId, {
       siteName: waterLevels.site_name ?? site.siteName,
       latitude: site.latitude,
       longitude: site.longitude,
       data: normalizeWaterLevels(waterLevels, siteId),
-      cycles: normalizeTideCycles(extrema, siteId)
+      extrema: normalizedExtrema,
+      cycles: normalizedExtrema
+        .filter((extremum) => extremum.type === "PM")
+        .map(({ time, height, coefficient }) => ({
+          time,
+          height,
+          coefficient
+        }))
     }];
   }));
 
