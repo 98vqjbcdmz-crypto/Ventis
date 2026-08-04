@@ -439,6 +439,7 @@
   </div>
 
   <script type="module">
+    import { dismissTooltipOnClickPlugin } from "./js/chart-interactions.js";
     import { formatDistance, sortSpotsByDistance } from "./js/distance.js";
     import { requestCurrentPosition } from "./js/geolocation.js";
     import { loadSpots } from "./js/spots.js?v=2";
@@ -1147,7 +1148,7 @@
 
         obsChart = new Chart(ctxObs, {
           type: "line",
-          plugins: [highlightBandsPlugin],
+          plugins: [highlightBandsPlugin, dismissTooltipOnClickPlugin],
           data: {
             labels: obsLabels,
             datasets: [
@@ -1351,7 +1352,7 @@
 
       forecastChart = new Chart(ctxFc, {
         type: "line",
-        plugins: [highlightBandsPlugin, dayLabelsPlugin],
+        plugins: [highlightBandsPlugin, dayLabelsPlugin, dismissTooltipOnClickPlugin],
         data: {
           labels: fcLabels,
           datasets: [
