@@ -16,4 +16,8 @@ test("les prévisions n'utilisent pas le niveau marin MSL comme hauteur de maré
   assert.match(html, /borderColor: "rgb\(255, 99, 132\)"/);
   assert.match(html, /borderColor: "rgb\(255, 159, 64\)"/);
   assert.match(html, /borderColor: "rgb\(255, 205, 86\)"/);
+  assert.match(
+    html,
+    /x: \{\s*ticks: \{ display: false \},\s*border: \{ display: false \}/
+  );
 });
