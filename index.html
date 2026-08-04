@@ -331,7 +331,8 @@
       color: #555;
       white-space: nowrap;
     }
-    @media (max-width: 600px) {
+    @media (max-width: 600px),
+      (orientation: landscape) and (max-height: 500px) and (max-width: 1024px) {
       body {
         margin: 0;
       }
@@ -362,6 +363,19 @@
       .tide-overlay-button {
         padding-inline: 8px;
         font-size: 0.84rem;
+      }
+    }
+    @media (orientation: landscape) and (max-height: 500px) and (max-width: 1024px) {
+      body:not(.chart-fullscreen-open) {
+        overflow-x: hidden;
+      }
+      body:not(.chart-fullscreen-open) .container {
+        box-sizing: border-box;
+        width: min(100vh, 430px);
+        width: min(100dvh, 430px);
+        min-height: 100vw;
+        min-height: 100dvw;
+        margin: 0 auto;
       }
     }
   </style>
