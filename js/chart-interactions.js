@@ -12,18 +12,39 @@ export function isPointInsideBox(point, box, padding = 0) {
   );
 }
 
+const tooltipBeforeClick = new WeakMap();
+
 export const dismissTooltipOnClickPlugin = {
   id: "dismissTooltipOnClick",
+  beforeEvent(chart, args) {
+    const { event } = args;
+    if (event.type !== "click") return;
+
+    const tooltip = chart.tooltip;
+    const wasVisible = Boolean(
+      tooltip &&
+      tooltip.opacity > 0 &&
+      tooltip.getActiveElements().length
+    );
+
+    tooltipBeforeClick.set(chart, wasVisible ? {
+      x: tooltip.x,
+      y: tooltip.y,
+      width: tooltip.width,
+      height: tooltip.height
+    } : null);
+  },
   afterEvent(chart, args) {
     const { event } = args;
     const tooltip = chart.tooltip;
+    const previousTooltip = tooltipBeforeClick.get(chart);
+    tooltipBeforeClick.delete(chart);
 
     if (
       event.type !== "click" ||
       !tooltip ||
-      tooltip.opacity === 0 ||
-      !tooltip.getActiveElements().length ||
-      !isPointInsideBox(event, tooltip, 6)
+      !previousTooltip ||
+      !isPointInsideBox(event, previousTooltip, 6)
     ) {
       return;
     }
