@@ -44,5 +44,5 @@ test("les prévisions n'utilisent pas le niveau marin MSL comme hauteur de maré
   assert.match(html, /basse mer/);
   assert.match(html, /js\/precipitation\.js\?v=2/);
   assert.match(html, /js\/tides\.js\?v=4/);
-  assert.match(html, /js\/chart-interactions\.js\?v=2/);
+  assert.match(html, /js\/chart-interactions\.js\?v=3/);
 });

@@ -116,6 +116,61 @@ test("le clic qui ouvre une infobulle ne la referme pas aussitôt", () => {
   assert.equal(args.changed, false);
 });
 
+test("le clic suivant immédiatement l'ouverture au pointeur est ignoré", () => {
+  let wasCleared = false;
+  const chart = {
+    setActiveElements() {
+      wasCleared = true;
+    },
+    tooltip: {
+      x: 20,
+      y: 20,
+      width: 120,
+      height: 80,
+      opacity: 1,
+      getActiveElements: () => [{ datasetIndex: 0, index: 2 }],
+      setActiveElements() {
+        wasCleared = true;
+      }
+    }
+  };
+
+  dismissTooltipOnClickPlugin.afterEvent(chart, {
+    event: { type: "mousemove", native: { timeStamp: 100 } },
+    changed: false
+  });
+
+  const firstClick = {
+    event: {
+      type: "click",
+      x: 40,
+      y: 40,
+      native: { timeStamp: 120 }
+    },
+    changed: false
+  };
+  dismissTooltipOnClickPlugin.beforeEvent(chart, firstClick);
+  dismissTooltipOnClickPlugin.afterEvent(chart, firstClick);
+
+  assert.equal(wasCleared, false);
+  assert.equal(firstClick.changed, false);
+
+  const laterClick = {
+    event: {
+      type: "click",
+      x: 40,
+      y: 40,
+      native: { timeStamp: 700 }
+    },
+    changed: false
+  };
+  dismissTooltipOnClickPlugin.beforeEvent(chart, laterClick);
+  dismissTooltipOnClickPlugin.afterEvent(chart, laterClick);
+
+  assert.equal(wasCleared, true);
+  assert.equal(laterClick.changed, true);
+});
+
 test("une infobulle déjà ouverte hors de la zone tracée reste fermable", () => {
   let wasCleared = false;
   const chart = {
