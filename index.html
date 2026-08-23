@@ -36,12 +36,31 @@
       color: #555;
       white-space: pre-line;
     }
+    .current-banner {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .current-logo {
+      width: 68px;
+      height: 68px;
+      flex: 0 0 auto;
+      border-radius: 18px;
+      box-shadow: 0 5px 16px rgba(6, 23, 53, 0.2);
+    }
     #current {
-      margin-top: 10px;
+      min-width: 0;
+      flex: 1 1 auto;
       padding: 10px;
       border-radius: 6px;
       background: #f0f7ff;
       font-size: 0.95rem;
+    }
+    #current a {
+      color: #155f7b;
+      font-weight: 600;
+      text-underline-offset: 2px;
     }
     .current-conditions-extra {
       margin-top: 8px;
@@ -345,6 +364,19 @@
         border-radius: 0;
         box-shadow: none;
       }
+      .current-banner {
+        gap: 9px;
+        margin-bottom: 14px;
+      }
+      .current-logo {
+        width: 56px;
+        height: 56px;
+        border-radius: 15px;
+      }
+      #current {
+        padding: 9px;
+        font-size: 0.88rem;
+      }
       .spot-row select {
         flex: 1 1 160px;
       }
@@ -373,6 +405,18 @@
 </head>
 <body>
   <div class="container">
+    <div class="current-banner">
+      <img
+        class="current-logo"
+        src="./assets/icons/icon-192.png"
+        width="68"
+        height="68"
+        alt="Logo Ventis"
+      />
+      <div id="current" role="status" aria-live="polite">
+        Chargement du spot…
+      </div>
+    </div>
     <h1>Vent & vagues – Observations + Prévisions</h1>
     <p>
       • Observations vent via <strong>minutely_15</strong> (toutes les 15 min)<br>
@@ -461,7 +505,6 @@
     </div>
 
     <div id="status"></div>
-    <div id="current"></div>
 
     <section class="chart-section" id="observationsSection">
       <div class="chart-heading-row">
@@ -521,6 +564,14 @@
       setGeolocationEnabled,
       setLastSpotId
     } from "./js/storage.js";
+    import {
+      computeGreenIntervals,
+      findNextGreenWindow,
+      formatGreenWindowDelay,
+      GREEN_WIND_MAX_KT,
+      GREEN_WIND_MIN_KT,
+      GREEN_WINDOW_MIN_HOURS
+    } from "./js/wind-windows.js?v=1";
 
     const KMH_TO_KT = 1 / 1.852;
     let obsChart = null;
@@ -552,9 +603,20 @@
         "https://marine-api.open-meteo.com/v1/marine" +
         "?latitude=" + encodeURIComponent(lat) +
         "&longitude=" + encodeURIComponent(lon) +
+        "&current=sea_surface_temperature" +
         "&hourly=wave_height,wave_period,sea_surface_temperature" +
         "&timezone=Europe/Paris"
       );
+    }
+
+    function buildWindguruUrl(spot) {
+      const url = new URL("https://www.windguru.cz/map/");
+      url.search = new URLSearchParams({
+        lat: String(spot.latitude),
+        lon: String(spot.longitude),
+        zoom: "11"
+      });
+      return url.href;
     }
 
     function formatLabel(dateStr) {
@@ -601,6 +663,37 @@
       );
     }
 
+    function getCurrentWaterTemperature(marine, currentTime, spot) {
+      const waterType = spot.typePlanEau?.toLocaleLowerCase("fr-FR");
+      if (["lac", "étang"].includes(waterType)) return null;
+
+      const currentTemperature = marine?.current?.sea_surface_temperature;
+      if (Number.isFinite(currentTemperature)) return currentTemperature;
+
+      const times = marine?.hourly?.time ?? [];
+      const temperatures = marine?.hourly?.sea_surface_temperature ?? [];
+      const targetMs = new Date(currentTime).getTime();
+      let nearestTemperature = null;
+      let nearestDifference = Infinity;
+
+      times.forEach((time, index) => {
+        const temperature = temperatures[index];
+        const difference = Math.abs(new Date(time).getTime() - targetMs);
+        if (Number.isFinite(temperature) && difference < nearestDifference) {
+          nearestTemperature = temperature;
+          nearestDifference = difference;
+        }
+      });
+
+      return nearestTemperature;
+    }
+
+    function formatNextGreenWindow(window) {
+      const delay = formatGreenWindowDelay(window);
+      if (!window || window.isOngoing) return delay;
+      return `${delay} · ${formatFullDateTime(window.startTime)}`;
+    }
+
     // 16 points cardinaux : vent VENANT DE
     function degToCompass16(deg) {
       const directions = [
@@ -615,39 +708,6 @@
       const arrows = ["↑","↗","→","↘","↓","↙","←","↖"];
       const toDir = (deg + 180) % 360;
       return arrows[Math.round((toDir % 360) / 45) % 8];
-    }
-
-    // Détecte les intervalles où le vent moyen est entre minKt et maxKt
-    // pendant au moins minHours heures (continues).
-    function computeGreenIntervals(timesISO, valuesKt, minKt, maxKt, minHours) {
-      const n = valuesKt.length;
-      const intervals = [];
-      if (!n) return intervals;
-
-      const timesMs = timesISO.map(t => new Date(t).getTime());
-      const minMs = minHours * 3600 * 1000;
-
-      let i = 0;
-      while (i < n) {
-        if (valuesKt[i] >= minKt && valuesKt[i] < maxKt) {
-          let j = i;
-          while (
-            j + 1 < n &&
-            valuesKt[j + 1] >= minKt &&
-            valuesKt[j + 1] < maxKt
-          ) {
-            j++;
-          }
-          const duration = timesMs[j] - timesMs[i];
-          if (duration >= minMs) {
-            intervals.push({ startIndex: i, endIndex: j });
-          }
-          i = j + 1;
-        } else {
-          i++;
-        }
-      }
-      return intervals;
     }
 
     // Nuit approximative : avant 7h ou après 21h (heure locale Europe/Paris)
@@ -1174,7 +1234,7 @@
       const status = document.getElementById("status");
       const currentDiv = document.getElementById("current");
       status.textContent = "⏳ Chargement des données...";
-      currentDiv.textContent = "";
+      currentDiv.textContent = "Chargement du spot…";
       updateTideControl();
       let warnings = "";
 
@@ -1221,6 +1281,22 @@
       }
 
       const now = new Date(data.current.time).getTime();
+      const hourlyTimes = data.hourly?.time ?? [];
+      const hourlyTemp2m = data.hourly?.temperature_2m ?? null;
+      const hourlyTimesMs = hourlyTimes.map((time) => new Date(time).getTime());
+      const hourlyWindKt = (data.hourly?.wind_speed_10m ?? [])
+        .map((speed) => speed * KMH_TO_KT);
+      const nextGreenWindow = findNextGreenWindow(
+        hourlyTimes,
+        hourlyWindKt,
+        data.current.time
+      );
+      const waterTemperature = getCurrentWaterTemperature(
+        marine,
+        data.current.time,
+        spot
+      );
+      const windguruUrl = buildWindguruUrl(spot);
 
       /* -------- Vent actuel -------- */
       const vKmh = data.current.wind_speed_10m;
@@ -1238,6 +1314,9 @@
       if (typeof tempCurrent === "number") {
         currentHtml += `<br>🌡️ Air : ${tempCurrent.toFixed(1)} °C`;
       }
+      currentHtml += Number.isFinite(waterTemperature)
+        ? `<br>🌊 Eau : ${waterTemperature.toFixed(1)} °C`
+        : `<br>🌊 Eau : indisponible`;
 
       const rainNext24Hours = summarizePrecipitationWindow(
         data.hourly?.time ?? [],
@@ -1250,7 +1329,10 @@
       let currentTideState = null;
 
       function renderCurrentConditions() {
-        const extraLines = [];
+        const extraLines = [
+          `<strong>🟢 Prochain créneau vert :</strong> ` +
+          formatNextGreenWindow(nextGreenWindow)
+        ];
         if (rainNext24HoursLabel) {
           extraLines.push(
             `<strong>🌧️ Pluie 24 h :</strong> ` +
@@ -1260,6 +1342,11 @@
 
         const tideLabel = formatCurrentTide(currentTideState, data.current.time);
         if (tideLabel) extraLines.push(tideLabel);
+        extraLines.push(
+          `<strong>↗ Windguru :</strong> ` +
+          `<a href="${windguruUrl}" target="_blank" rel="noopener noreferrer">` +
+          `prévisions de ${spot.nom}</a>`
+        );
 
         currentDiv.innerHTML = currentHtml + (extraLines.length
           ? `<div class="current-conditions-extra">${extraLines.join("<br>")}</div>`
@@ -1278,10 +1365,6 @@
       });
 
       /* -------- Données horaires (pour température air) -------- */
-      const hourlyTimes = (data.hourly && data.hourly.time) ? data.hourly.time : [];
-      const hourlyTemp2m = (data.hourly && data.hourly.temperature_2m) ? data.hourly.temperature_2m : null;
-      const hourlyTimesMs = hourlyTimes.map(t => new Date(t).getTime());
-
       function getNearestHourlyTemp(dateISO) {
         if (!hourlyTemp2m || !hourlyTimesMs.length) return null;
         const tMs = new Date(dateISO).getTime();
@@ -1365,7 +1448,13 @@
         }
 
         // Intervalles verts (12–20 kt pendant ≥ 1h)
-        const obsGreenIntervals = computeGreenIntervals(obsTimes, obsS_kt, 12, 20, 1);
+        const obsGreenIntervals = computeGreenIntervals(
+          obsTimes,
+          obsS_kt,
+          GREEN_WIND_MIN_KT,
+          GREEN_WIND_MAX_KT,
+          GREEN_WINDOW_MIN_HOURS
+        );
         // Intervalles de nuit (colonnes grisées)
         const obsNightIntervals = buildNightIntervals(obsTimes);
 
@@ -1587,7 +1676,13 @@
       }
 
       // Intervalles verts prévisions (12–20 kt pendant ≥ 1h)
-      const fcGreenIntervals = computeGreenIntervals(fcTimes, fcS_kt, 12, 20, 1);
+      const fcGreenIntervals = computeGreenIntervals(
+        fcTimes,
+        fcS_kt,
+        GREEN_WIND_MIN_KT,
+        GREEN_WIND_MAX_KT,
+        GREEN_WINDOW_MIN_HOURS
+      );
       // Intervalles de nuit pour les prévisions
       const fcNightIntervals = buildNightIntervals(fcTimes);
 
