@@ -56,10 +56,6 @@
       --pull-offset: 58px;
       opacity: 1;
     }
-    h1 {
-      font-size: 1.4rem;
-      margin-bottom: 0.5rem;
-    }
     .container {
       max-width: 1100px;
       margin: 0 auto;
@@ -80,12 +76,44 @@
       gap: 12px;
       margin-bottom: 16px;
     }
+    .current-brand {
+      display: grid;
+      width: 68px;
+      flex: 0 0 auto;
+      gap: 6px;
+      justify-items: center;
+    }
     .current-logo {
       width: 68px;
       height: 68px;
-      flex: 0 0 auto;
       border-radius: 18px;
       box-shadow: 0 5px 16px rgba(6, 23, 53, 0.2);
+    }
+    .current-wordmark {
+      font-family: "Avenir Next Condensed", "Futura Condensed", sans-serif;
+      font-size: 0.88rem;
+      font-style: italic;
+      font-weight: 900;
+      letter-spacing: 0.09em;
+      line-height: 1;
+      text-transform: uppercase;
+      background: linear-gradient(100deg, #08d9e6 8%, #248cdd 42%, #ff3f70 78%);
+      background-clip: text;
+      color: #ff3f70;
+      filter: drop-shadow(0 1px 0 #061735);
+      transform: skewX(-7deg);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .current-wordmark::after {
+      display: block;
+      width: 84%;
+      height: 2px;
+      margin: 4px auto 0;
+      background: linear-gradient(90deg, #08d9e6, #ff3f70);
+      box-shadow: 0 2px 0 rgba(6, 23, 53, 0.82);
+      content: "";
+      transform: skewX(-18deg);
     }
     #current {
       min-width: 0;
@@ -411,6 +439,13 @@
         height: 56px;
         border-radius: 15px;
       }
+      .current-brand {
+        width: 56px;
+        gap: 5px;
+      }
+      .current-wordmark {
+        font-size: 0.76rem;
+      }
       #current {
         padding: 9px;
         font-size: 0.88rem;
@@ -452,24 +487,20 @@
   </div>
   <div class="container">
     <div class="current-banner">
-      <img
-        class="current-logo"
-        src="./assets/icons/icon-192.png"
-        width="68"
-        height="68"
-        alt="Logo Ventis"
-      />
+      <div class="current-brand">
+        <img
+          class="current-logo"
+          src="./assets/icons/icon-192.png"
+          width="68"
+          height="68"
+          alt="Logo Ventis"
+        />
+        <span class="current-wordmark" aria-hidden="true">Ventis</span>
+      </div>
       <div id="current" role="status" aria-live="polite">
         Chargement du spot…
       </div>
     </div>
-    <h1>Vent & vagues – Observations + Prévisions</h1>
-    <p>
-      • Observations vent via <strong>minutely_15</strong> (toutes les 15 min)<br>
-      • Prévisions vent via <strong>hourly</strong><br>
-      • Vitesse en <strong>nœuds</strong>, vent affiché en <strong>SSE ↗</strong> (provenance + flèche)<br>
-      • Vagues (hauteur & période) via API marine Open-Meteo (prévisions uniquement)
-    </p>
 
     <!-- Choix du spot -->
     <div class="spot-row">
