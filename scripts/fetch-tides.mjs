@@ -46,6 +46,11 @@ export function mapSpotsToTideSites(
   const mappings = {};
 
   spots.forEach((spot) => {
+    const waterType = spot.typePlanEau?.trim().toLocaleLowerCase("fr-FR");
+    if (spot.maree === "sans marée" || ["lac", "étang"].includes(waterType)) {
+      return;
+    }
+
     const nearest = tideSites
       .map((site) => ({
         site,

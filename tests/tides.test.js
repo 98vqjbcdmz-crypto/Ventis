@@ -233,10 +233,17 @@ test("le chargement du cache contourne le cache navigateur", async () => {
   assert.equal(loaded, validCache);
 });
 
-test("le générateur ignore les spots trop éloignés d'un port couvert", () => {
+test("le générateur ignore les spots trop éloignés et les plans d'eau sans marée", () => {
   const mappings = mapSpotsToTideSites([
     { id: "manche", latitude: 48.84, longitude: -1.6 },
-    { id: "mediterranee", latitude: 42.91, longitude: 3.02 }
+    { id: "mediterranee", latitude: 42.91, longitude: 3.02 },
+    {
+      id: "lac",
+      latitude: 48.84,
+      longitude: -1.6,
+      maree: "sans marée",
+      typePlanEau: "lac"
+    }
   ], [{
     siteId: "granville",
     siteName: "Granville",
@@ -246,4 +253,5 @@ test("le générateur ignore les spots trop éloignés d'un port couvert", () =>
 
   assert.equal(mappings.manche.siteId, "granville");
   assert.equal(mappings.mediterranee, undefined);
+  assert.equal(mappings.lac, undefined);
 });

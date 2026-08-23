@@ -42,6 +42,26 @@ test("la base permet de rechercher le spot de Leucate", async () => {
   assert.ok(leucate?.tags.includes("Leucate"));
 });
 
+test("la base couvre les spots de wingfoil autour d'Arcachon", async () => {
+  const spots = JSON.parse(await readFile(spotsUrl, "utf8"));
+  const ids = new Set(spots.map((spot) => spot.id));
+
+  [
+    "arcachon-arbousiers",
+    "gujan-mestras-la-hume",
+    "andernos-le-betey",
+    "pyla-cercle-de-voile",
+    "sanguinet-caton"
+  ].forEach((id) => assert.ok(ids.has(id)));
+
+  const arcachonSpots = spots.filter((spot) => spot.tags.includes("Arcachon"));
+  assert.ok(arcachonSpots.length >= 5);
+  arcachonSpots.forEach((spot) => {
+    assert.equal(spot.region, "Nouvelle-Aquitaine");
+    assert.ok(spot.tags.includes("wingfoil"));
+  });
+});
+
 test("le chargement de la base contourne le cache du navigateur", async () => {
   let fetchOptions;
   const spots = [{
