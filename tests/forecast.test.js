@@ -26,14 +26,9 @@ test("les prévisions n'utilisent pas le niveau marin MSL comme hauteur de maré
   assert.match(html, /afterDatasetsDraw\(chart, args, pluginOptions\)/);
   assert.doesNotMatch(html, /afterDraw\(chart, args, pluginOptions\)/);
   assert.match(html, /coef\. estimé/);
-  assert.match(html, /orientation\?\.lock\?\.\("portrait-primary"\)/);
-  assert.match(html, /await lockHomeOrientation\(\)/);
-  assert.match(
-    html,
-    /@media \(orientation: landscape\) and \(max-height: 500px\) and \(max-width: 1024px\)/
-  );
-  assert.match(html, /body:not\(\.chart-fullscreen-open\) \.container/);
-  assert.match(html, /width: min\(100dvh, 430px\)/);
+  assert.doesNotMatch(html, /portrait-primary/);
+  assert.doesNotMatch(html, /lockHomeOrientation/);
+  assert.doesNotMatch(html, /body:not\(\.chart-fullscreen-open\) \.container/);
   assert.match(html, /precipitation_probability,precipitation/);
   assert.match(html, /summarizeDailyPrecipitation/);
   assert.match(html, /precipitationByDay/);

@@ -336,8 +336,7 @@
       color: #555;
       white-space: nowrap;
     }
-    @media (max-width: 600px),
-      (orientation: landscape) and (max-height: 500px) and (max-width: 1024px) {
+    @media (max-width: 600px) {
       body {
         margin: 0;
       }
@@ -368,19 +367,6 @@
       .tide-overlay-button {
         padding-inline: 8px;
         font-size: 0.84rem;
-      }
-    }
-    @media (orientation: landscape) and (max-height: 500px) and (max-width: 1024px) {
-      body:not(.chart-fullscreen-open) {
-        overflow-x: hidden;
-      }
-      body:not(.chart-fullscreen-open) .container {
-        box-sizing: border-box;
-        width: min(100vh, 430px);
-        width: min(100dvh, 430px);
-        min-height: 100vw;
-        min-height: 100dvw;
-        margin: 0 auto;
       }
     }
   </style>
@@ -1019,16 +1005,6 @@
       requestAnimationFrame(() => requestAnimationFrame(() => chart?.resize()));
     }
 
-    async function lockHomeOrientation() {
-      if (activeFullscreenSection) return;
-
-      try {
-        await globalThis.screen?.orientation?.lock?.("portrait-primary");
-      } catch {
-        // Le manifeste PWA conserve le portrait lorsque l'API est indisponible.
-      }
-    }
-
     async function openChartFullscreen(sectionId) {
       const section = document.getElementById(sectionId);
       if (!section) return;
@@ -1085,7 +1061,6 @@
         }
       }
 
-      await lockHomeOrientation();
       resizeSectionChart(sectionId);
     }
 
@@ -1921,14 +1896,10 @@
       };
       document.addEventListener("fullscreenchange", handleNativeFullscreenExit);
       document.addEventListener("webkitfullscreenchange", handleNativeFullscreenExit);
-      document.addEventListener("visibilitychange", () => {
-        if (!document.hidden) lockHomeOrientation();
-      });
     }
 
     async function initializeApp() {
       const status = document.getElementById("status");
-      lockHomeOrientation();
 
       try {
         spots = await loadSpots();

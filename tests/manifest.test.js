@@ -4,9 +4,9 @@ import test from "node:test";
 
 const manifestUrl = new URL("../manifest.webmanifest", import.meta.url);
 
-test("la PWA reste en portrait hors du plein écran des graphes", async () => {
+test("la PWA suit librement l'orientation du téléphone", async () => {
   const manifest = JSON.parse(await readFile(manifestUrl, "utf8"));
 
   assert.equal(manifest.display, "standalone");
-  assert.equal(manifest.orientation, "portrait-primary");
+  assert.equal(manifest.orientation, "any");
 });
