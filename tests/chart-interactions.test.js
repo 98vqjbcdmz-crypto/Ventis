@@ -116,7 +116,7 @@ test("le clic qui ouvre une infobulle ne la referme pas aussitôt", () => {
   assert.equal(args.changed, false);
 });
 
-test("le clic suivant immédiatement l'ouverture au pointeur est ignoré", () => {
+test("le premier clic après une ouverture au pointeur stabilise l'infobulle", () => {
   let wasCleared = false;
   const chart = {
     setActiveElements() {
@@ -136,7 +136,7 @@ test("le clic suivant immédiatement l'ouverture au pointeur est ignoré", () =>
   };
 
   dismissTooltipOnClickPlugin.afterEvent(chart, {
-    event: { type: "mousemove", native: { timeStamp: 100 } },
+    event: { type: "mousemove" },
     changed: false
   });
 
@@ -144,8 +144,7 @@ test("le clic suivant immédiatement l'ouverture au pointeur est ignoré", () =>
     event: {
       type: "click",
       x: 40,
-      y: 40,
-      native: { timeStamp: 120 }
+      y: 40
     },
     changed: false
   };
@@ -159,8 +158,7 @@ test("le clic suivant immédiatement l'ouverture au pointeur est ignoré", () =>
     event: {
       type: "click",
       x: 40,
-      y: 40,
-      native: { timeStamp: 700 }
+      y: 40
     },
     changed: false
   };

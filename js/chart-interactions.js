@@ -14,13 +14,6 @@ export function isPointInsideBox(point, box, padding = 0) {
 
 const tooltipBeforeClick = new WeakMap();
 const tooltipVisibility = new WeakMap();
-const TOOLTIP_CLICK_GUARD_MS = 500;
-
-function getEventTime(event) {
-  return Number.isFinite(event?.native?.timeStamp)
-    ? event.native.timeStamp
-    : Date.now();
-}
 
 function getVisibleTooltip(tooltip) {
   const activeElements = tooltip?.getActiveElements?.() ?? [];
@@ -47,9 +40,10 @@ function rememberTooltip(chart, event) {
   const previous = tooltipVisibility.get(chart);
   tooltipVisibility.set(chart, {
     signature: tooltip.signature,
-    openedAt: previous?.signature === tooltip.signature
-      ? previous.openedAt
-      : getEventTime(event)
+    confirmedByClick: event.type === "click" || (
+      previous?.signature === tooltip.signature &&
+      previous.confirmedByClick
+    )
   });
 }
 
@@ -64,9 +58,9 @@ export const dismissTooltipOnClickPlugin = {
 
     tooltipBeforeClick.set(chart, tooltip ? {
       ...tooltip,
-      openedAt: visibility?.signature === tooltip.signature
-        ? visibility.openedAt
-        : Number.NEGATIVE_INFINITY
+      confirmedByClick: visibility?.signature === tooltip.signature
+        ? visibility.confirmedByClick
+        : true
     } : null);
   },
   afterEvent(chart, args) {
@@ -84,7 +78,7 @@ export const dismissTooltipOnClickPlugin = {
       !tooltip ||
       !previousTooltip ||
       !isPointInsideBox(event, previousTooltip, 6) ||
-      getEventTime(event) - previousTooltip.openedAt < TOOLTIP_CLICK_GUARD_MS
+      !previousTooltip.confirmedByClick
     ) {
       rememberTooltip(chart, event);
       return;
