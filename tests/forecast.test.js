@@ -43,4 +43,7 @@ test("les prévisions n'utilisent pas le niveau marin MSL comme hauteur de maré
   assert.match(html, /js\/precipitation\.js\?v=2/);
   assert.match(html, /js\/tides\.js\?v=4/);
   assert.match(html, /js\/chart-interactions\.js\?v=4/);
+  assert.match(html, /js\/pull-to-refresh\.js\?v=1/);
+  assert.match(html, /id="pullToRefresh"/);
+  assert.match(html, /fetch\(windUrl, \{ cache: "no-store" \}\)/);
 });
