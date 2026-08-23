@@ -45,6 +45,8 @@ test("les prévisions n'utilisent pas le niveau marin MSL comme hauteur de maré
   assert.match(html, /js\/chart-interactions\.js\?v=4/);
   assert.match(html, /js\/pull-to-refresh\.js\?v=1/);
   assert.match(html, /id="pullToRefresh"/);
+  assert.match(html, /class="pull-refresh-spinner"/);
+  assert.match(html, /animation: pull-refresh-spin 700ms linear infinite/);
   assert.match(html, /fetch\(windUrl, \{ cache: "no-store" \}\)/);
   assert.match(html, /class="current-wordmark"[^>]*>Ventis</);
   assert.doesNotMatch(html, /<h1>|Observations vent via/);

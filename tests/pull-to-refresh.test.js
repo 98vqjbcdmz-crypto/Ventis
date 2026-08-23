@@ -3,7 +3,8 @@ import test from "node:test";
 
 import {
   getPullState,
-  setupPullToRefresh
+  setupPullToRefresh,
+  triggerRefreshHaptic
 } from "../js/pull-to-refresh.js";
 
 class FakeEventTarget {
@@ -42,10 +43,22 @@ test("le geste devient prêt après le seuil", () => {
   assert.equal(getPullState(72), "ready");
 });
 
+test("le retour haptique est déclenché seulement s'il est disponible", () => {
+  let duration = null;
+
+  assert.equal(triggerRefreshHaptic(), false);
+  assert.equal(triggerRefreshHaptic((value) => {
+    duration = value;
+    return true;
+  }), true);
+  assert.equal(duration, 18);
+});
+
 test("tirer depuis le haut puis relâcher actualise les données", async () => {
   const eventTarget = new FakeEventTarget();
   const indicator = createIndicator();
   let refreshCount = 0;
+  let vibrationCount = 0;
   let prevented = false;
 
   const cleanup = setupPullToRefresh({
@@ -53,6 +66,11 @@ test("tirer depuis le haut puis relâcher actualise les données", async () => {
     eventTarget,
     scrollTarget: { scrollY: 0 },
     threshold: 50,
+    completionDelayMs: 0,
+    vibrate: () => {
+      vibrationCount += 1;
+      return true;
+    },
     onRefresh: async () => {
       refreshCount += 1;
     }
@@ -73,6 +91,7 @@ test("tirer depuis le haut puis relâcher actualise les données", async () => {
 
   await eventTarget.dispatch("touchend");
   assert.equal(refreshCount, 1);
+  assert.equal(vibrationCount, 1);
   assert.equal(indicator.dataset.state, "idle");
 
   cleanup();

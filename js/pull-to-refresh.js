@@ -5,13 +5,25 @@ export function getPullState(distance, threshold = DEFAULT_PULL_THRESHOLD) {
   return distance >= threshold ? "ready" : "pulling";
 }
 
+export function triggerRefreshHaptic(vibrate) {
+  if (typeof vibrate !== "function") return false;
+
+  try {
+    return vibrate(18) !== false;
+  } catch {
+    return false;
+  }
+}
+
 export function setupPullToRefresh({
   indicator,
   onRefresh,
   canStart = () => true,
   eventTarget = globalThis.document,
   scrollTarget = globalThis,
-  threshold = DEFAULT_PULL_THRESHOLD
+  threshold = DEFAULT_PULL_THRESHOLD,
+  vibrate = globalThis.navigator?.vibrate?.bind(globalThis.navigator),
+  completionDelayMs = 450
 }) {
   if (!indicator || typeof onRefresh !== "function") {
     throw new TypeError("Configuration du rafraîchissement invalide.");
@@ -20,6 +32,7 @@ export function setupPullToRefresh({
   let startY = null;
   let pullDistance = 0;
   let refreshing = false;
+  const label = indicator.querySelector?.("[data-pull-label]");
 
   const setIndicator = (state, distance = 0) => {
     const labels = {
@@ -31,7 +44,11 @@ export function setupPullToRefresh({
     };
 
     indicator.dataset.state = state;
-    indicator.textContent = labels[state];
+    if (label) {
+      label.textContent = labels[state];
+    } else {
+      indicator.textContent = labels[state];
+    }
     indicator.style.setProperty(
       "--pull-offset",
       `${Math.min(68, Math.round(distance * 0.58))}px`
@@ -85,10 +102,15 @@ export function setupPullToRefresh({
 
     refreshing = true;
     setIndicator("refreshing", threshold);
+    triggerRefreshHaptic(vibrate);
     try {
       await onRefresh();
       setIndicator("complete", threshold);
-      await new Promise((resolve) => globalThis.setTimeout(resolve, 450));
+      if (completionDelayMs > 0) {
+        await new Promise((resolve) =>
+          globalThis.setTimeout(resolve, completionDelayMs)
+        );
+      }
     } finally {
       refreshing = false;
       resetPull();
