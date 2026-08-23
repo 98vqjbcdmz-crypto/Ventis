@@ -95,7 +95,34 @@
     "niveau": "intermédiaire",
     "maree": "basse",
     "typePlanEau": "bassin",
-    "tags": ["Arcachon", "Les Arbousiers", "Les Abatilles", "Le Moulleau", "wingfoil", "foil", "chenal"]
+    "tags": ["Arcachon", "Les Arbousiers", "Les Abatilles", "Le Moulleau", "Arcagliss", "wingfoil", "foil", "chenal"],
+    "ecole": {
+      "nom": "Arcagliss",
+      "url": "https://www.ecoledesurf-arcachon.com/arcagliss-plage-des-arbousiers/"
+    }
+  },
+  {
+    "id": "la-salie-sud-surf-en-buch",
+    "nom": "La Salie Sud – Surf en Buch",
+    "latitude": 44.5157349,
+    "longitude": -1.2543656,
+    "region": "Nouvelle-Aquitaine",
+    "departement": "Gironde",
+    "pays": "France",
+    "orientationIdeale": [],
+    "niveau": null,
+    "maree": null,
+    "typePlanEau": "océan",
+    "tags": ["Arcachon", "La Teste-de-Buch", "La Salie Sud", "Surf en Buch", "surf", "bodyboard", "océan", "école de surf"],
+    "ecole": {
+      "nom": "Surf en Buch",
+      "url": "https://www.ecoledesurf-arcachon.com/carte-spots/"
+    },
+    "parking": {
+      "latitude": 44.519885,
+      "longitude": -1.2458965,
+      "url": "https://maps.app.goo.gl/xqExQFBLZnLxLp5LA?g_st=ic"
+    }
   },
   {
     "id": "gujan-mestras-la-hume",

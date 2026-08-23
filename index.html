@@ -654,7 +654,7 @@
       summarizePrecipitationWindow
     } from "./js/precipitation.js?v=2";
     import { setupPullToRefresh } from "./js/pull-to-refresh.js?v=1";
-    import { loadSpots } from "./js/spots.js?v=2";
+    import { loadSpots } from "./js/spots.js?v=3";
     import {
       getCurrentTideState,
       getTideSeries,
@@ -1107,6 +1107,7 @@
             spot.departement,
             spot.region,
             spot.pays,
+            spot.ecole?.nom,
             ...(spot.tags ?? [])
           ].filter(Boolean).join(" "));
 
@@ -1239,10 +1240,41 @@
 
     function updateSpotInfo(spot) {
       const spotInfoDiv = document.getElementById("spotInfo");
-      spotInfoDiv.innerHTML =
-        `Spot sélectionné : <strong>${spot.nom}</strong> ` +
-        `(<a href="https://www.google.com/maps?q=${spot.latitude},${spot.longitude}" target="_blank" rel="noopener noreferrer">` +
-        `${spot.latitude.toFixed(4)}, ${spot.longitude.toFixed(4)}</a>)`;
+      const spotName = document.createElement("strong");
+      const mapLink = document.createElement("a");
+
+      spotName.textContent = spot.nom;
+      mapLink.href = `https://www.google.com/maps?q=${spot.latitude},${spot.longitude}`;
+      mapLink.target = "_blank";
+      mapLink.rel = "noopener noreferrer";
+      mapLink.textContent =
+        `${spot.latitude.toFixed(4)}, ${spot.longitude.toFixed(4)}`;
+
+      spotInfoDiv.replaceChildren(
+        "Spot sélectionné : ",
+        spotName,
+        " (",
+        mapLink,
+        ")"
+      );
+
+      if (spot.ecole) {
+        const schoolLink = document.createElement("a");
+        schoolLink.href = spot.ecole.url;
+        schoolLink.target = "_blank";
+        schoolLink.rel = "noopener noreferrer";
+        schoolLink.textContent = spot.ecole.nom;
+        spotInfoDiv.append(" · École : ", schoolLink);
+      }
+
+      if (spot.parking) {
+        const parkingLink = document.createElement("a");
+        parkingLink.href = spot.parking.url;
+        parkingLink.target = "_blank";
+        parkingLink.rel = "noopener noreferrer";
+        parkingLink.textContent = "Parking";
+        spotInfoDiv.append(" · ", parkingLink);
+      }
 
       document.getElementById("observationsSpotName").textContent = spot.nom;
       document.getElementById("forecastSpotName").textContent = spot.nom;

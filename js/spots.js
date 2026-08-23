@@ -11,6 +11,40 @@ function isValidCoordinate(value, minimum, maximum) {
   return Number.isFinite(value) && value >= minimum && value <= maximum;
 }
 
+function isValidHttpsUrl(value) {
+  if (typeof value !== "string") return false;
+
+  try {
+    return new URL(value).protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+function validateOptionalMetadata(spot) {
+  if (spot.ecole != null) {
+    if (
+      typeof spot.ecole !== "object" ||
+      typeof spot.ecole.nom !== "string" ||
+      !spot.ecole.nom.trim() ||
+      !isValidHttpsUrl(spot.ecole.url)
+    ) {
+      throw new TypeError(`Spot ${spot.id}: école invalide.`);
+    }
+  }
+
+  if (spot.parking != null) {
+    if (
+      typeof spot.parking !== "object" ||
+      !isValidCoordinate(spot.parking.latitude, -90, 90) ||
+      !isValidCoordinate(spot.parking.longitude, -180, 180) ||
+      !isValidHttpsUrl(spot.parking.url)
+    ) {
+      throw new TypeError(`Spot ${spot.id}: parking invalide.`);
+    }
+  }
+}
+
 export function validateSpots(spots) {
   if (!Array.isArray(spots) || spots.length === 0) {
     throw new TypeError("La base des spots est vide ou invalide.");
@@ -35,6 +69,8 @@ export function validateSpots(spots) {
     if (!isValidCoordinate(spot.longitude, -180, 180)) {
       throw new TypeError(`Spot ${spot.id}: longitude invalide.`);
     }
+
+    validateOptionalMetadata(spot);
 
     ids.add(spot.id);
   });

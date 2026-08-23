@@ -42,7 +42,7 @@ test("la base permet de rechercher le spot de Leucate", async () => {
   assert.ok(leucate?.tags.includes("Leucate"));
 });
 
-test("la base couvre les spots de wingfoil autour d'Arcachon", async () => {
+test("la base couvre les spots autour d'Arcachon", async () => {
   const spots = JSON.parse(await readFile(spotsUrl, "utf8"));
   const ids = new Set(spots.map((spot) => spot.id));
 
@@ -55,11 +55,56 @@ test("la base couvre les spots de wingfoil autour d'Arcachon", async () => {
   ].forEach((id) => assert.ok(ids.has(id)));
 
   const arcachonSpots = spots.filter((spot) => spot.tags.includes("Arcachon"));
-  assert.ok(arcachonSpots.length >= 5);
+  assert.ok(arcachonSpots.length >= 6);
   arcachonSpots.forEach((spot) => {
     assert.equal(spot.region, "Nouvelle-Aquitaine");
-    assert.ok(spot.tags.includes("wingfoil"));
   });
+});
+
+test("la base relie Surf en Buch et Arcagliss à leurs spots", async () => {
+  const spots = JSON.parse(await readFile(spotsUrl, "utf8"));
+  const surfEnBuch = spots.find(
+    (spot) => spot.id === "la-salie-sud-surf-en-buch"
+  );
+  const arbousiers = spots.find(
+    (spot) => spot.id === "arcachon-arbousiers"
+  );
+
+  assert.equal(surfEnBuch?.latitude, 44.5157349);
+  assert.equal(surfEnBuch?.longitude, -1.2543656);
+  assert.equal(surfEnBuch?.ecole.nom, "Surf en Buch");
+  assert.equal(surfEnBuch?.parking.latitude, 44.519885);
+  assert.equal(arbousiers?.ecole.nom, "Arcagliss");
+  assert.ok(arbousiers?.tags.includes("Arcagliss"));
+});
+
+test("les métadonnées facultatives des spots sont validées", () => {
+  const validSpot = {
+    id: "spot-ecole",
+    nom: "Spot école",
+    latitude: 44,
+    longitude: -1,
+    region: "Nouvelle-Aquitaine",
+    pays: "France",
+    ecole: {
+      nom: "École test",
+      url: "https://example.com/ecole"
+    },
+    parking: {
+      latitude: 44.1,
+      longitude: -1.1,
+      url: "https://example.com/parking"
+    }
+  };
+
+  assert.equal(validateSpots([validSpot])[0], validSpot);
+  assert.throws(
+    () => validateSpots([{
+      ...validSpot,
+      ecole: { nom: "", url: "http://example.com" }
+    }]),
+    /école invalide/
+  );
 });
 
 test("le chargement de la base contourne le cache du navigateur", async () => {
