@@ -605,6 +605,7 @@
         "&longitude=" + encodeURIComponent(lon) +
         "&current=sea_surface_temperature" +
         "&hourly=wave_height,wave_period,sea_surface_temperature" +
+        "&cell_selection=sea" +
         "&timezone=Europe/Paris"
       );
     }
@@ -665,7 +666,7 @@
 
     function getCurrentWaterTemperature(marine, currentTime, spot) {
       const waterType = spot.typePlanEau?.toLocaleLowerCase("fr-FR");
-      if (["lac", "étang"].includes(waterType)) return null;
+      if (waterType === "lac") return null;
 
       const currentTemperature = marine?.current?.sea_surface_temperature;
       if (Number.isFinite(currentTemperature)) return currentTemperature;
@@ -1296,6 +1297,10 @@
         data.current.time,
         spot
       );
+      const waterTemperatureLabel =
+        spot.typePlanEau?.toLocaleLowerCase("fr-FR") === "étang"
+          ? "Mer proche"
+          : "Eau";
       const windguruUrl = buildWindguruUrl(spot);
 
       /* -------- Vent actuel -------- */
@@ -1315,7 +1320,7 @@
         currentHtml += `<br>🌡️ Air : ${tempCurrent.toFixed(1)} °C`;
       }
       currentHtml += Number.isFinite(waterTemperature)
-        ? `<br>🌊 Eau : ${waterTemperature.toFixed(1)} °C`
+        ? `<br>🌊 ${waterTemperatureLabel} : ${waterTemperature.toFixed(1)} °C`
         : `<br>🌊 Eau : indisponible`;
 
       const rainNext24Hours = summarizePrecipitationWindow(
