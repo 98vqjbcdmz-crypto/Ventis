@@ -4,6 +4,19 @@ export const TIDE_CACHE_URL =
 export const TIDE_ATTRIBUTION =
   "Données de marée fournies par api-maree.fr, calculées à partir de composantes harmoniques Ifremer / PREVIMER, sous licence Creative Commons Attribution 4.0 International.";
 
+export const DEFAULT_TIDE_CAUTION_THRESHOLD = 3;
+export const ARCACHON_TIDE_CAUTION_THRESHOLD = 1.5;
+
+export function getTideCautionThreshold(spot) {
+  const isArcachonBasin =
+    spot?.typePlanEau?.trim().toLocaleLowerCase("fr-FR") === "bassin" &&
+    spot?.tags?.includes("Arcachon");
+
+  return isArcachonBasin
+    ? ARCACHON_TIDE_CAUTION_THRESHOLD
+    : DEFAULT_TIDE_CAUTION_THRESHOLD;
+}
+
 function isRecord(value) {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }

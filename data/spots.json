@@ -11,6 +11,8 @@
     "niveau": null,
     "maree": null,
     "typePlanEau": null,
+    "windguruSpotId": 5386,
+    "forecastModel": "meteofrance_arome_france_hd",
     "tags": []
   },
   {
@@ -25,6 +27,8 @@
     "niveau": null,
     "maree": null,
     "typePlanEau": null,
+    "windguruSpotId": 5386,
+    "forecastModel": "meteofrance_arome_france_hd",
     "tags": []
   },
   {
@@ -39,6 +43,8 @@
     "niveau": null,
     "maree": null,
     "typePlanEau": null,
+    "windguruSpotId": 10379,
+    "forecastModel": "meteofrance_arome_france_hd",
     "tags": []
   },
   {
@@ -53,6 +59,7 @@
     "niveau": null,
     "maree": null,
     "typePlanEau": null,
+    "windguruSpotId": 48589,
     "tags": []
   },
   {
@@ -67,6 +74,7 @@
     "niveau": null,
     "maree": null,
     "typePlanEau": "étang",
+    "windguruSpotId": 1130294,
     "tags": ["Leucate", "Le Goulet", "wingfoil", "windsurf", "étang"]
   },
   {
@@ -81,6 +89,8 @@
     "niveau": null,
     "maree": null,
     "typePlanEau": null,
+    "windguruSpotId": 5386,
+    "forecastModel": "meteofrance_arome_france_hd",
     "tags": []
   },
   {
@@ -95,6 +105,7 @@
     "niveau": "intermédiaire",
     "maree": "basse",
     "typePlanEau": "bassin",
+    "windguruSpotId": 990102,
     "tags": ["Arcachon", "Les Arbousiers", "Les Abatilles", "Le Moulleau", "Arcagliss", "wingfoil", "foil", "chenal"],
     "ecole": {
       "nom": "Arcagliss",
@@ -113,6 +124,7 @@
     "niveau": null,
     "maree": null,
     "typePlanEau": "océan",
+    "windguruSpotId": 706567,
     "tags": ["Arcachon", "La Teste-de-Buch", "La Salie Sud", "Surf en Buch", "surf", "bodyboard", "océan", "école de surf"],
     "ecole": {
       "nom": "Surf en Buch",
@@ -136,6 +148,7 @@
     "niveau": "débutant",
     "maree": "autour de la pleine mer",
     "typePlanEau": "bassin",
+    "windguruSpotId": 500959,
     "tags": ["Arcachon", "Gujan-Mestras", "La Hume", "wingfoil", "foil", "eau plate", "chenal"]
   },
   {
@@ -150,6 +163,7 @@
     "niveau": null,
     "maree": "autour de la pleine mer",
     "typePlanEau": "bassin",
+    "windguruSpotId": 60841,
     "tags": ["Arcachon", "Andernos-les-Bains", "Le Betey", "wingfoil", "foil", "chenal"]
   },
   {
@@ -164,6 +178,7 @@
     "niveau": "tous niveaux",
     "maree": null,
     "typePlanEau": "bassin",
+    "windguruSpotId": 425064,
     "tags": ["Arcachon", "Pyla-sur-Mer", "Dune du Pilat", "Cercle de voile", "wingfoil", "foil", "chenal"]
   },
   {
@@ -178,6 +193,7 @@
     "niveau": "débutant",
     "maree": "sans marée",
     "typePlanEau": "lac",
+    "windguruSpotId": 500967,
     "tags": ["Arcachon", "Sanguinet", "Cazaux", "Plage de Caton", "wingfoil", "foil", "eau plate", "lac"]
   },
   {
@@ -192,6 +208,7 @@
     "niveau": null,
     "maree": null,
     "typePlanEau": null,
+    "windguruSpotId": 5435,
     "tags": []
   },
   {
@@ -206,6 +223,7 @@
     "niveau": null,
     "maree": null,
     "typePlanEau": null,
+    "windguruSpotId": 5435,
     "tags": []
   },
   {
@@ -220,6 +238,7 @@
     "niveau": null,
     "maree": null,
     "typePlanEau": null,
+    "windguruSpotId": 247544,
     "tags": []
   },
   {
@@ -234,6 +253,7 @@
     "niveau": null,
     "maree": null,
     "typePlanEau": null,
+    "windguruSpotId": 728006,
     "tags": []
   },
   {
@@ -248,6 +268,7 @@
     "niveau": null,
     "maree": null,
     "typePlanEau": null,
+    "windguruSpotId": 728006,
     "tags": []
   },
   {
@@ -262,6 +283,7 @@
     "niveau": null,
     "maree": null,
     "typePlanEau": null,
+    "windguruSpotId": 500902,
     "tags": []
   },
   {
@@ -276,6 +298,7 @@
     "niveau": null,
     "maree": null,
     "typePlanEau": null,
+    "windguruSpotId": 48399,
     "tags": []
   },
   {
@@ -290,6 +313,7 @@
     "niveau": null,
     "maree": null,
     "typePlanEau": null,
+    "windguruSpotId": 186,
     "tags": []
   },
   {
@@ -304,6 +328,7 @@
     "niveau": null,
     "maree": null,
     "typePlanEau": null,
+    "windguruSpotId": 48395,
     "tags": []
   },
   {
@@ -318,6 +343,7 @@
     "niveau": null,
     "maree": null,
     "typePlanEau": null,
+    "windguruSpotId": 48394,
     "tags": []
   },
   {
@@ -332,6 +358,7 @@
     "niveau": null,
     "maree": null,
     "typePlanEau": null,
+    "windguruSpotId": 48391,
     "tags": []
   }
 ]

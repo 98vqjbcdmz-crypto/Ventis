@@ -3,14 +3,18 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const indexUrl = new URL("../index.html", import.meta.url);
+const forecastModuleUrl = new URL("../js/forecast.js", import.meta.url);
 
 test("les prévisions n'utilisent pas le niveau marin MSL comme hauteur de marée", async () => {
-  const html = await readFile(indexUrl, "utf8");
+  const [html, forecastModule] = await Promise.all([
+    readFile(indexUrl, "utf8"),
+    readFile(forecastModuleUrl, "utf8")
+  ]);
 
   assert.doesNotMatch(html, /sea_level_height_msl/);
   assert.match(html, /id="tideOverlayButton"/);
   assert.match(html, /hidden: true,[\s\S]*yAxisID: "yTide"/);
-  assert.match(html, /threshold: 3/);
+  assert.match(html, /threshold: tideCautionThreshold/);
   assert.doesNotMatch(html, /id="tideAttribution"|class="tide-attribution"/);
   assert.match(html, /borderColor: "rgb\(54, 162, 235\)"/);
   assert.match(html, /borderColor: "rgb\(255, 99, 132\)"/);
@@ -29,7 +33,8 @@ test("les prévisions n'utilisent pas le niveau marin MSL comme hauteur de maré
   assert.doesNotMatch(html, /portrait-primary/);
   assert.doesNotMatch(html, /lockHomeOrientation/);
   assert.doesNotMatch(html, /body:not\(\.chart-fullscreen-open\) \.container/);
-  assert.match(html, /precipitation_probability,precipitation/);
+  assert.match(forecastModule, /"precipitation_probability"/);
+  assert.match(forecastModule, /"precipitation"/);
   assert.match(html, /summarizeDailyPrecipitation/);
   assert.match(html, /precipitationByDay/);
   assert.match(html, /Pluie 24 h/);
@@ -41,7 +46,7 @@ test("les prévisions n'utilisent pas le niveau marin MSL comme hauteur de maré
   assert.match(html, /pleine mer/);
   assert.match(html, /basse mer/);
   assert.match(html, /js\/precipitation\.js\?v=2/);
-  assert.match(html, /js\/tides\.js\?v=4/);
+  assert.match(html, /js\/tides\.js\?v=5/);
   assert.match(html, /js\/chart-interactions\.js\?v=4/);
   assert.match(html, /js\/pull-to-refresh\.js\?v=1/);
   assert.match(html, /id="pullToRefresh"/);

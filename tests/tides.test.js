@@ -5,6 +5,7 @@ import test from "node:test";
 import {
   findNearestTideCoefficient,
   getCurrentTideState,
+  getTideCautionThreshold,
   getTideSeries,
   loadTideCache,
   validateTideCache
@@ -15,6 +16,21 @@ import {
   normalizeTideExtrema,
   normalizeWaterLevels
 } from "../scripts/fetch-tides.mjs";
+
+test("le seuil de prudence est abaissé sur le bassin d'Arcachon", () => {
+  assert.equal(getTideCautionThreshold({
+    typePlanEau: "bassin",
+    tags: ["Arcachon", "wingfoil"]
+  }), 1.5);
+  assert.equal(getTideCautionThreshold({
+    typePlanEau: "océan",
+    tags: ["Arcachon", "surf"]
+  }), 3);
+  assert.equal(getTideCautionThreshold({
+    typePlanEau: "bassin",
+    tags: ["ailleurs"]
+  }), 3);
+});
 
 const validCache = {
   generatedAt: "2026-08-04T08:00:00.000Z",

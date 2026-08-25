@@ -649,6 +649,12 @@
     import { formatDistance, sortSpotsByDistance } from "./js/distance.js";
     import { requestCurrentPosition } from "./js/geolocation.js";
     import {
+      buildPreferredWindUrl,
+      buildWindguruUrl,
+      buildWindUrl,
+      mergePreferredWindForecast
+    } from "./js/forecast.js?v=1";
+    import {
       formatDailyPrecipitation,
       summarizeDailyPrecipitation,
       summarizePrecipitationWindow
@@ -656,10 +662,12 @@
     import { setupPullToRefresh } from "./js/pull-to-refresh.js?v=1";
     import { loadSpots } from "./js/spots.js?v=3";
     import {
+      DEFAULT_TIDE_CAUTION_THRESHOLD,
       getCurrentTideState,
+      getTideCautionThreshold,
       getTideSeries,
       loadTideCache
-    } from "./js/tides.js?v=4";
+    } from "./js/tides.js?v=5";
     import {
       getLastSpotId,
       isGeolocationEnabled,
@@ -688,18 +696,6 @@
     let tideCachePromise = null;
     let activeTideSeries = null;
 
-    function buildWindUrl(lat, lon) {
-      return (
-        "https://api.open-meteo.com/v1/forecast" +
-        "?latitude=" + encodeURIComponent(lat) +
-        "&longitude=" + encodeURIComponent(lon) +
-        "&current=wind_speed_10m,wind_direction_10m,wind_gusts_10m,temperature_2m" +
-        "&minutely_15=wind_speed_10m,wind_direction_10m,wind_gusts_10m" +
-        "&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m,temperature_2m,precipitation_probability,precipitation" +
-        "&timezone=Europe/Paris"
-      );
-    }
-
     function buildMarineUrl(lat, lon) {
       return (
         "https://marine-api.open-meteo.com/v1/marine" +
@@ -710,16 +706,6 @@
         "&cell_selection=sea" +
         "&timezone=Europe/Paris"
       );
-    }
-
-    function buildWindguruUrl(spot) {
-      const url = new URL("https://www.windguru.cz/map/");
-      url.search = new URLSearchParams({
-        lat: String(spot.latitude),
-        lon: String(spot.longitude),
-        zoom: "11"
-      });
-      return url.href;
     }
 
     function formatLabel(dateStr) {
@@ -975,7 +961,7 @@
           !tideScale
         ) return;
 
-        const threshold = pluginOptions?.threshold ?? 3;
+        const threshold = pluginOptions?.threshold ?? DEFAULT_TIDE_CAUTION_THRESHOLD;
         const { ctx, chartArea } = chart;
         const thresholdPixel = tideScale.getPixelForValue(threshold);
         const top = Math.max(chartArea.top, Math.min(chartArea.bottom, thresholdPixel));
@@ -1379,6 +1365,11 @@
         status.textContent = "❌ Spot inconnu.";
         return;
       }
+      const tideCautionThreshold = getTideCautionThreshold(spot);
+      const tideCautionThresholdLabel = tideCautionThreshold.toLocaleString(
+        "fr-FR",
+        { maximumFractionDigits: 1 }
+      );
 
       setLastSpotId(spotKey);
       updateSpotInfo(spot);
@@ -1389,21 +1380,42 @@
       const fcStepHours = parseInt(document.getElementById("fcStep").value, 10);
 
       const windUrl = buildWindUrl(spot.latitude, spot.longitude);
+      const preferredWindUrl = buildPreferredWindUrl(spot);
       const marineUrl = buildMarineUrl(spot.latitude, spot.longitude);
 
-      let data, marine;
+      let data, marine, preferredWind;
       try {
-        const [resWind, resMarine] = await Promise.all([
+        const preferredWindRequest = preferredWindUrl
+          ? fetch(preferredWindUrl, { cache: "no-store" })
+              .then((response) => response.ok ? response.json() : null)
+              .catch((error) => {
+                console.warn("Prévision prioritaire indisponible.", error);
+                return null;
+              })
+          : Promise.resolve(null);
+        const [resWind, resMarine, preferredWindData] = await Promise.all([
           fetch(windUrl, { cache: "no-store" }),
-          fetch(marineUrl, { cache: "no-store" })
+          fetch(marineUrl, { cache: "no-store" }),
+          preferredWindRequest
         ]);
+        if (!resWind.ok) {
+          throw new Error(`Open-Meteo (${resWind.status})`);
+        }
         data = await resWind.json();
         marine = resMarine.ok ? await resMarine.json() : null;
+        preferredWind = preferredWindData;
       } catch (e) {
         if (requestVersion !== loadRequestVersion) return;
         status.textContent = "❌ Erreur réseau : " + e;
         console.error(e);
         return;
+      }
+
+      if (preferredWind?.hourly?.time) {
+        data = mergePreferredWindForecast(data, preferredWind);
+        warnings += "\nℹ️ Vent : AROME-FR 1,3 km prioritaire, puis meilleur modèle disponible.";
+      } else if (preferredWindUrl) {
+        warnings += "\n⚠️ AROME-FR 1,3 km indisponible ; meilleur modèle disponible utilisé.";
       }
 
       // Ignore une réponse devenue obsolète après un changement rapide de spot.
@@ -1979,9 +1991,11 @@
                     tideDatasetIndex >= 0 &&
                     forecastChart.isDatasetVisible(tideDatasetIndex) &&
                     Number.isFinite(tideHeight) &&
-                    tideHeight < 3
+                    tideHeight < tideCautionThreshold
                   ) {
-                    lines.push("Prudence : hauteur d'eau inférieure à 3 m");
+                    lines.push(
+                      `Prudence : hauteur d'eau inférieure à ${tideCautionThresholdLabel} m`
+                    );
                   }
                   return lines;
                 },
@@ -2005,7 +2019,7 @@
               precipitationByDay
             },
             tideCaution: {
-              threshold: 3
+              threshold: tideCautionThreshold
             }
           },
           scales: {

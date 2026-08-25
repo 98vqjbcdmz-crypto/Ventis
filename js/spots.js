@@ -4,7 +4,8 @@ const REQUIRED_FIELDS = [
   "latitude",
   "longitude",
   "region",
-  "pays"
+  "pays",
+  "windguruSpotId"
 ];
 
 function isValidCoordinate(value, minimum, maximum) {
@@ -22,6 +23,20 @@ function isValidHttpsUrl(value) {
 }
 
 function validateOptionalMetadata(spot) {
+  if (
+    spot.windguruSpotId != null &&
+    (!Number.isInteger(spot.windguruSpotId) || spot.windguruSpotId <= 0)
+  ) {
+    throw new TypeError(`Spot ${spot.id}: identifiant Windguru invalide.`);
+  }
+
+  if (
+    spot.forecastModel != null &&
+    spot.forecastModel !== "meteofrance_arome_france_hd"
+  ) {
+    throw new TypeError(`Spot ${spot.id}: modèle de prévision invalide.`);
+  }
+
   if (spot.ecole != null) {
     if (
       typeof spot.ecole !== "object" ||

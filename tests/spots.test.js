@@ -12,6 +12,22 @@ test("la base contient des spots valides et uniques", async () => {
 
   assert.equal(validateSpots(spots), spots);
   assert.equal(new Set(spots.map((spot) => spot.id)).size, spots.length);
+  spots.forEach((spot) => assert.ok(Number.isInteger(spot.windguruSpotId)));
+});
+
+test("AROME France HD est prioritaire autour de Montpellier", async () => {
+  const spots = JSON.parse(await readFile(spotsUrl, "utf8"));
+  const aromeSpotIds = spots
+    .filter((spot) => spot.forecastModel === "meteofrance_arome_france_hd")
+    .map((spot) => spot.id)
+    .sort();
+
+  assert.deepEqual(aromeSpotIds, [
+    "aresquiers",
+    "plageSud",
+    "ponant",
+    "travers"
+  ]);
 });
 
 test("la base couvre les principaux spots de la Manche", async () => {
@@ -86,6 +102,7 @@ test("les métadonnées facultatives des spots sont validées", () => {
     longitude: -1,
     region: "Nouvelle-Aquitaine",
     pays: "France",
+    windguruSpotId: 12345,
     ecole: {
       nom: "École test",
       url: "https://example.com/ecole"
@@ -115,7 +132,8 @@ test("le chargement de la base contourne le cache du navigateur", async () => {
     latitude: 48,
     longitude: -1,
     region: "Normandie",
-    pays: "France"
+    pays: "France",
+    windguruSpotId: 12345
   }];
 
   const loadedSpots = await loadSpots((url, options) => {
