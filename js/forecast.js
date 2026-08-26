@@ -36,15 +36,13 @@ export function buildWindUrl(lat, lon, model = null) {
 }
 
 export function buildPreferredWindUrl(spot) {
-  if (!spot.forecastModel) return null;
-
   const url = new URL("https://api.open-meteo.com/v1/forecast");
   url.search = new URLSearchParams({
     latitude: String(spot.latitude),
     longitude: String(spot.longitude),
     hourly: HOURLY_WIND_VARIABLES.join(","),
     timezone: "Europe/Paris",
-    models: spot.forecastModel
+    models: spot.forecastModel ?? AROME_FRANCE_HD_MODEL
   });
   return url.href;
 }

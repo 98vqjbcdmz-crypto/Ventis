@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 import { sortSpotsByDistance } from "../js/distance.js";
+import { buildPreferredWindUrl } from "../js/forecast.js";
 import { loadSpots, validateSpots } from "../js/spots.js";
 
 const spotsUrl = new URL("../data/spots.json", import.meta.url);
@@ -15,19 +16,17 @@ test("la base contient des spots valides et uniques", async () => {
   spots.forEach((spot) => assert.ok(Number.isInteger(spot.windguruSpotId)));
 });
 
-test("AROME France HD est prioritaire autour de Montpellier", async () => {
+test("AROME France HD est prioritaire sur tous les spots", async () => {
   const spots = JSON.parse(await readFile(spotsUrl, "utf8"));
-  const aromeSpotIds = spots
-    .filter((spot) => spot.forecastModel === "meteofrance_arome_france_hd")
-    .map((spot) => spot.id)
-    .sort();
 
-  assert.deepEqual(aromeSpotIds, [
-    "aresquiers",
-    "plageSud",
-    "ponant",
-    "travers"
-  ]);
+  spots.forEach((spot) => {
+    const url = new URL(buildPreferredWindUrl(spot));
+    assert.equal(
+      url.searchParams.get("models"),
+      "meteofrance_arome_france_hd",
+      spot.id
+    );
+  });
 });
 
 test("la base couvre les principaux spots de la Manche", async () => {

@@ -11,8 +11,7 @@ import {
 test("la requête prioritaire sélectionne AROME France HD", () => {
   const url = new URL(buildPreferredWindUrl({
     latitude: 43.56,
-    longitude: 4.11,
-    forecastModel: AROME_FRANCE_HD_MODEL
+    longitude: 4.11
   }));
 
   assert.equal(url.searchParams.get("models"), AROME_FRANCE_HD_MODEL);
