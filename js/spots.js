@@ -5,7 +5,8 @@ const REQUIRED_FIELDS = [
   "longitude",
   "region",
   "pays",
-  "windguruSpotId"
+  "windguruSpotId",
+  "windguruSpotName"
 ];
 
 function isValidCoordinate(value, minimum, maximum) {
@@ -35,6 +36,13 @@ function validateOptionalMetadata(spot) {
     spot.forecastModel !== "meteofrance_arome_france_hd"
   ) {
     throw new TypeError(`Spot ${spot.id}: modèle de prévision invalide.`);
+  }
+
+  if (
+    spot.windguruSpotName != null &&
+    (typeof spot.windguruSpotName !== "string" || !spot.windguruSpotName.trim())
+  ) {
+    throw new TypeError(`Spot ${spot.id}: nom de fiche Windguru invalide.`);
   }
 
   if (spot.ecole != null) {

@@ -11,7 +11,8 @@
     "niveau": null,
     "maree": null,
     "typePlanEau": null,
-    "windguruSpotId": 5386,
+    "windguruSpotId": 48600,
+    "windguruSpotName": "La Grande Motte",
     "tags": []
   },
   {
@@ -26,7 +27,8 @@
     "niveau": null,
     "maree": null,
     "typePlanEau": null,
-    "windguruSpotId": 5386,
+    "windguruSpotId": 48600,
+    "windguruSpotName": "La Grande Motte",
     "tags": []
   },
   {
@@ -41,7 +43,8 @@
     "niveau": null,
     "maree": null,
     "typePlanEau": null,
-    "windguruSpotId": 10379,
+    "windguruSpotId": 500982,
+    "windguruSpotName": "Pont Aresquiers, Frontignan-Plage",
     "tags": []
   },
   {
@@ -57,6 +60,7 @@
     "maree": null,
     "typePlanEau": null,
     "windguruSpotId": 48589,
+    "windguruSpotName": "Étang de Mateille",
     "tags": []
   },
   {
@@ -71,7 +75,8 @@
     "niveau": null,
     "maree": null,
     "typePlanEau": "étang",
-    "windguruSpotId": 1130294,
+    "windguruSpotId": 500989,
+    "windguruSpotName": "Le Goulet, Étang de Leucate",
     "tags": ["Leucate", "Le Goulet", "wingfoil", "windsurf", "étang"]
   },
   {
@@ -86,7 +91,8 @@
     "niveau": null,
     "maree": null,
     "typePlanEau": null,
-    "windguruSpotId": 5386,
+    "windguruSpotId": 48600,
+    "windguruSpotName": "La Grande Motte",
     "tags": []
   },
   {
@@ -102,6 +108,7 @@
     "maree": "basse",
     "typePlanEau": "bassin",
     "windguruSpotId": 990102,
+    "windguruSpotName": "Plage des Arbousiers, Arcachon",
     "tags": ["Arcachon", "Les Arbousiers", "Les Abatilles", "Le Moulleau", "Arcagliss", "wingfoil", "foil", "chenal"],
     "ecole": {
       "nom": "Arcagliss",
@@ -121,6 +128,7 @@
     "maree": null,
     "typePlanEau": "océan",
     "windguruSpotId": 706567,
+    "windguruSpotName": "La Salie - Le Wharf",
     "tags": ["Arcachon", "La Teste-de-Buch", "La Salie Sud", "Surf en Buch", "surf", "bodyboard", "océan", "école de surf"],
     "ecole": {
       "nom": "Surf en Buch",
@@ -145,6 +153,7 @@
     "maree": "autour de la pleine mer",
     "typePlanEau": "bassin",
     "windguruSpotId": 500959,
+    "windguruSpotName": "La Hume, Bassin d'Arcachon",
     "tags": ["Arcachon", "Gujan-Mestras", "La Hume", "wingfoil", "foil", "eau plate", "chenal"]
   },
   {
@@ -160,6 +169,7 @@
     "maree": "autour de la pleine mer",
     "typePlanEau": "bassin",
     "windguruSpotId": 60841,
+    "windguruSpotName": "Andernos Betey",
     "tags": ["Arcachon", "Andernos-les-Bains", "Le Betey", "wingfoil", "foil", "chenal"]
   },
   {
@@ -175,6 +185,7 @@
     "maree": null,
     "typePlanEau": "bassin",
     "windguruSpotId": 425064,
+    "windguruSpotName": "Dune du Pyla",
     "tags": ["Arcachon", "Pyla-sur-Mer", "Dune du Pilat", "Cercle de voile", "wingfoil", "foil", "chenal"]
   },
   {
@@ -190,6 +201,7 @@
     "maree": "sans marée",
     "typePlanEau": "lac",
     "windguruSpotId": 500967,
+    "windguruSpotName": "Sanguinet, Lac de Cazaux et de Sanguinet",
     "tags": ["Arcachon", "Sanguinet", "Cazaux", "Plage de Caton", "wingfoil", "foil", "eau plate", "lac"]
   },
   {
@@ -205,6 +217,7 @@
     "maree": null,
     "typePlanEau": null,
     "windguruSpotId": 5435,
+    "windguruSpotName": "Granville - Donville",
     "tags": []
   },
   {
@@ -220,6 +233,7 @@
     "maree": null,
     "typePlanEau": null,
     "windguruSpotId": 5435,
+    "windguruSpotName": "Granville - Donville",
     "tags": []
   },
   {
@@ -235,6 +249,7 @@
     "maree": null,
     "typePlanEau": null,
     "windguruSpotId": 247544,
+    "windguruSpotName": "Saint Martin de Bréhal",
     "tags": []
   },
   {
@@ -250,6 +265,7 @@
     "maree": null,
     "typePlanEau": null,
     "windguruSpotId": 728006,
+    "windguruSpotName": "Jullouville, CVJ",
     "tags": []
   },
   {
@@ -265,6 +281,7 @@
     "maree": null,
     "typePlanEau": null,
     "windguruSpotId": 728006,
+    "windguruSpotName": "Jullouville, CVJ",
     "tags": []
   },
   {
@@ -280,6 +297,7 @@
     "maree": null,
     "typePlanEau": null,
     "windguruSpotId": 500902,
+    "windguruSpotName": "Le Rozel",
     "tags": []
   },
   {
@@ -295,6 +313,7 @@
     "maree": null,
     "typePlanEau": null,
     "windguruSpotId": 48399,
+    "windguruSpotName": "Sciotot",
     "tags": []
   },
   {
@@ -310,6 +329,7 @@
     "maree": null,
     "typePlanEau": null,
     "windguruSpotId": 186,
+    "windguruSpotName": "Siouville-Hague",
     "tags": []
   },
   {
@@ -325,6 +345,7 @@
     "maree": null,
     "typePlanEau": null,
     "windguruSpotId": 48395,
+    "windguruSpotName": "Urville-Nacqueville",
     "tags": []
   },
   {
@@ -340,6 +361,7 @@
     "maree": null,
     "typePlanEau": null,
     "windguruSpotId": 48394,
+    "windguruSpotName": "Collignon",
     "tags": []
   },
   {
@@ -355,6 +377,7 @@
     "maree": null,
     "typePlanEau": null,
     "windguruSpotId": 48391,
+    "windguruSpotName": "Jonville",
     "tags": []
   }
 ]

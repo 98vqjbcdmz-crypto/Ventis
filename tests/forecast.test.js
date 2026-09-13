@@ -37,7 +37,9 @@ test("les prévisions n'utilisent pas le niveau marin MSL comme hauteur de maré
   assert.match(forecastModule, /"precipitation"/);
   assert.match(html, /summarizeDailyPrecipitation/);
   assert.match(html, /precipitationByDay/);
-  assert.match(html, /Pluie 24 h/);
+  assert.match(html, /Prochaine pluie/);
+  assert.match(html, /id="exactPositionButton"/);
+  assert.match(html, /buildExactPositionSpot/);
   assert.match(html, /cell_selection=sea/);
   assert.match(html, /waterType === "lac"/);
   assert.match(html, /"Mer proche"/);
@@ -45,7 +47,7 @@ test("les prévisions n'utilisent pas le niveau marin MSL comme hauteur de maré
   assert.match(html, /current-conditions-extra/);
   assert.match(html, /pleine mer/);
   assert.match(html, /basse mer/);
-  assert.match(html, /js\/precipitation\.js\?v=2/);
+  assert.match(html, /js\/precipitation\.js\?v=3/);
   assert.match(html, /js\/tides\.js\?v=5/);
   assert.match(html, /js\/chart-interactions\.js\?v=4/);
   assert.match(html, /js\/pull-to-refresh\.js\?v=1/);

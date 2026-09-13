@@ -1,7 +1,33 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { requestCurrentPosition } from "../js/geolocation.js";
+import {
+  buildExactPositionSpot,
+  EXACT_POSITION_SPOT_ID,
+  requestCurrentPosition
+} from "../js/geolocation.js";
+
+test("un spot temporaire conserve les coordonnées GPS exactes", () => {
+  const exactSpot = buildExactPositionSpot(
+    { latitude: 43.56789, longitude: 4.12345, accuracy: 8 },
+    {
+      nom: "Le Ponant",
+      region: "Occitanie",
+      departement: "Gard",
+      pays: "France",
+      windguruSpotId: 48600,
+      windguruSpotName: "La Grande Motte",
+      distanceKm: 2.4
+    }
+  );
+
+  assert.equal(exactSpot.id, EXACT_POSITION_SPOT_ID);
+  assert.equal(exactSpot.latitude, 43.56789);
+  assert.equal(exactSpot.longitude, 4.12345);
+  assert.equal(exactSpot.windguruSpotId, 48600);
+  assert.equal(exactSpot.windguruSpotName, "La Grande Motte");
+  assert.equal(exactSpot.isExactPosition, true);
+});
 
 test("requestCurrentPosition normalise les coordonnées GPS", async () => {
   const geolocation = {

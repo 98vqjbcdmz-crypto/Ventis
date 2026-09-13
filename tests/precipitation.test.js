@@ -2,10 +2,45 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  findNextRainWindow,
   formatDailyPrecipitation,
   summarizeDailyPrecipitation,
   summarizePrecipitationWindow
 } from "../js/precipitation.js";
+
+test("la prochaine pluie démarre un cumul glissant de 24 heures", () => {
+  const forecast = findNextRainWindow(
+    [
+      "2026-08-04T11:00",
+      "2026-08-04T13:00",
+      "2026-08-04T14:00",
+      "2026-08-05T12:00",
+      "2026-08-05T14:00"
+    ],
+    [90, 20, 65, 80, 100],
+    [5, 0, 0.2, 1.3, 12],
+    "2026-08-04T12:00"
+  );
+
+  assert.deepEqual(forecast, {
+    startTime: "2026-08-04T14:00",
+    probabilityMax: 80,
+    amountMm: 1.5,
+    hasAmount: true
+  });
+});
+
+test("aucune prochaine pluie n'est annoncée sous le seuil de 0,1 mm", () => {
+  assert.equal(
+    findNextRainWindow(
+      ["2026-08-04T13:00", "2026-08-04T14:00"],
+      [60, 80],
+      [0, 0.09],
+      "2026-08-04T12:00"
+    ),
+    null
+  );
+});
 
 test("les précipitations sont cumulées par jour avec la probabilité maximale", () => {
   const summaries = summarizeDailyPrecipitation(

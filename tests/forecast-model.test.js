@@ -3,13 +3,14 @@ import test from "node:test";
 
 import {
   AROME_FRANCE_HD_MODEL,
-  buildPreferredWindUrl,
+  buildPreferredForecastUrl,
   buildWindguruUrl,
-  mergePreferredWindForecast
+  getWindguruSpotLabel,
+  mergePreferredForecast
 } from "../js/forecast.js";
 
 test("la requête prioritaire sélectionne AROME France HD", () => {
-  const url = new URL(buildPreferredWindUrl({
+  const url = new URL(buildPreferredForecastUrl({
     latitude: 43.56,
     longitude: 4.11
   }));
@@ -18,7 +19,8 @@ test("la requête prioritaire sélectionne AROME France HD", () => {
   assert.deepEqual(url.searchParams.get("hourly").split(","), [
     "wind_speed_10m",
     "wind_direction_10m",
-    "wind_gusts_10m"
+    "wind_gusts_10m",
+    "precipitation"
   ]);
 });
 
@@ -30,7 +32,8 @@ test("AROME est préféré puis la prévision générale prend le relais", () =>
       wind_speed_10m: [10, 11, 12],
       wind_direction_10m: [100, 110, 120],
       wind_gusts_10m: [20, 21, 22],
-      precipitation: [0, 0.1, 0]
+      precipitation: [0, 0.1, 0],
+      precipitation_probability: [10, 60, 20]
     }
   };
   const preferred = {
@@ -38,16 +41,21 @@ test("AROME est préféré puis la prévision générale prend le relais", () =>
       time: ["2026-08-25T12:00", "2026-08-25T13:00"],
       wind_speed_10m: [15, null],
       wind_direction_10m: [150, 160],
-      wind_gusts_10m: [25, 26]
+      wind_gusts_10m: [25, 26],
+      precipitation: [0.4, null]
     }
   };
 
-  const merged = mergePreferredWindForecast(fallback, preferred);
+  const merged = mergePreferredForecast(fallback, preferred);
 
   assert.deepEqual(merged.hourly.wind_speed_10m, [15, 11, 12]);
   assert.deepEqual(merged.hourly.wind_direction_10m, [150, 160, 120]);
   assert.deepEqual(merged.hourly.wind_gusts_10m, [25, 26, 22]);
-  assert.equal(merged.hourly.precipitation, fallback.hourly.precipitation);
+  assert.deepEqual(merged.hourly.precipitation, [0.4, 0.1, 0]);
+  assert.equal(
+    merged.hourly.precipitation_probability,
+    fallback.hourly.precipitation_probability
+  );
   assert.equal(merged.current, fallback.current);
 });
 
@@ -59,5 +67,9 @@ test("le lien Windguru ouvre directement la fiche du spot", () => {
   assert.throws(
     () => buildWindguruUrl({ id: "sans-fiche" }),
     /fiche Windguru manquante/
+  );
+  assert.equal(
+    getWindguruSpotLabel({ nom: "Le Ponant", windguruSpotName: "La Grande Motte" }),
+    "La Grande Motte"
   );
 });

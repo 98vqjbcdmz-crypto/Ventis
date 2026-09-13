@@ -307,7 +307,8 @@
       margin-right: 0;
       min-height: 36px;
     }
-    #nearMeButton {
+    #nearMeButton,
+    #exactPositionButton {
       min-height: 36px;
       padding: 6px 12px;
       border: 1px solid #b9c7d5;
@@ -318,10 +319,12 @@
       font: inherit;
       font-weight: 600;
     }
-    #nearMeButton:hover {
+    #nearMeButton:hover,
+    #exactPositionButton:hover {
       background: #e3f0ff;
     }
-    #nearMeButton:disabled {
+    #nearMeButton:disabled,
+    #exactPositionButton:disabled {
       cursor: wait;
       opacity: 0.65;
     }
@@ -476,7 +479,8 @@
       .spot-row select {
         flex: 1 1 160px;
       }
-      #nearMeButton {
+      #nearMeButton,
+      #exactPositionButton {
         flex: 1 1 150px;
       }
       .spot-search {
@@ -531,6 +535,7 @@
       <strong>Spot :</strong>
       <select id="spotSelect" aria-label="Spot"></select>
       <button id="nearMeButton" type="button">📍 Autour de moi</button>
+      <button id="exactPositionButton" type="button">🎯 Position exacte</button>
     </div>
     <div class="spot-search" id="spotSearchContainer">
       <label class="visually-hidden" for="spotSearch">Rechercher un spot</label>
@@ -647,20 +652,25 @@
   <script type="module">
     import { dismissTooltipOnClickPlugin } from "./js/chart-interactions.js?v=4";
     import { formatDistance, sortSpotsByDistance } from "./js/distance.js";
-    import { requestCurrentPosition } from "./js/geolocation.js";
     import {
-      buildPreferredWindUrl,
+      buildExactPositionSpot,
+      EXACT_POSITION_SPOT_ID,
+      requestCurrentPosition
+    } from "./js/geolocation.js?v=1";
+    import {
+      buildPreferredForecastUrl,
       buildWindguruUrl,
       buildWindUrl,
-      mergePreferredWindForecast
-    } from "./js/forecast.js?v=1";
+      getWindguruSpotLabel,
+      mergePreferredForecast
+    } from "./js/forecast.js?v=2";
     import {
+      findNextRainWindow,
       formatDailyPrecipitation,
-      summarizeDailyPrecipitation,
-      summarizePrecipitationWindow
-    } from "./js/precipitation.js?v=2";
+      summarizeDailyPrecipitation
+    } from "./js/precipitation.js?v=3";
     import { setupPullToRefresh } from "./js/pull-to-refresh.js?v=1";
-    import { loadSpots } from "./js/spots.js?v=3";
+    import { loadSpots } from "./js/spots.js?v=4";
     import {
       DEFAULT_TIDE_CAUTION_THRESHOLD,
       getCurrentTideState,
@@ -781,6 +791,25 @@
       const delay = formatGreenWindowDelay(window);
       if (!window || window.isOngoing) return delay;
       return `${delay} · ${formatFullDateTime(window.startTime)}`;
+    }
+
+    function formatNextRainForecast(forecast, usesArome) {
+      if (!forecast) return "aucune pluie ≥ 0,1 mm prévue sur 7 jours";
+
+      const amount = forecast.hasAmount
+        ? `${forecast.amountMm.toFixed(1).replace(".", ",")} mm sur 24 h`
+        : "cumul indisponible";
+      const probability = Number.isFinite(forecast.probabilityMax)
+        ? `risque max. ${Math.round(forecast.probabilityMax)} %`
+        : "probabilité indisponible";
+      const source = usesArome
+        ? "AROME-FR 1,3 km prioritaire"
+        : "meilleur modèle disponible";
+
+      return (
+        `${formatFullDateTime(forecast.startTime)} · ${amount} · ` +
+        `${probability} · ${source}`
+      );
     }
 
     // 16 points cardinaux : vent VENANT DE
@@ -1027,6 +1056,21 @@
       });
 
       spotSelect.replaceChildren(...options);
+    }
+
+    function upsertExactPositionSpot(spot) {
+      const spotSelect = document.getElementById("spotSelect");
+      let option = [...spotSelect.options].find(
+        ({ value }) => value === EXACT_POSITION_SPOT_ID
+      );
+
+      if (!option) {
+        option = document.createElement("option");
+        option.value = EXACT_POSITION_SPOT_ID;
+        spotSelect.prepend(option);
+      }
+      option.textContent = "🎯 Ma position exacte";
+      spotsById[EXACT_POSITION_SPOT_ID] = spot;
     }
 
     function normalizeSearch(value) {
@@ -1281,7 +1325,7 @@
       if (!spot) return;
 
       document.getElementById("spotSelect").value = spotId;
-      setLastSpotId(spotId);
+      if (!spot.isExactPosition) setLastSpotId(spotId);
       updateSpotInfo(spot);
       updateNearbySelection();
       loadAndPlot();
@@ -1349,6 +1393,45 @@
       }
     }
 
+    async function locateExactPosition() {
+      const button = document.getElementById("exactPositionButton");
+      const geolocationStatus = document.getElementById("geolocationStatus");
+
+      button.disabled = true;
+      button.textContent = "Localisation…";
+      geolocationStatus.textContent = "Calcul de la prévision à vos coordonnées…";
+
+      try {
+        const position = await requestCurrentPosition();
+        nearbySpots = sortSpotsByDistance(position, spots);
+        const nearestSpot = nearbySpots[0];
+        const exactSpot = buildExactPositionSpot(position, nearestSpot);
+        const accuracyLabel = Number.isFinite(position.accuracy)
+          ? ` · précision ± ${Math.round(position.accuracy)} m`
+          : "";
+
+        setGeolocationEnabled(true);
+        upsertExactPositionSpot(exactSpot);
+        renderNearbySpots();
+        geolocationStatus.textContent =
+          `Prévision à ${position.latitude.toFixed(5)}, ` +
+          `${position.longitude.toFixed(5)}${accuracyLabel}. ` +
+          `Fiche Windguru officielle proche : ` +
+          `${getWindguruSpotLabel(exactSpot)} ` +
+          `(${formatDistance(nearestSpot.distanceKm)}).`;
+        selectSpot(EXACT_POSITION_SPOT_ID);
+      } catch (error) {
+        if (error?.reason === "denied" || error?.reason === "unsupported") {
+          setGeolocationEnabled(false);
+        }
+        geolocationStatus.textContent =
+          error?.message ?? "Impossible de récupérer votre position.";
+      } finally {
+        button.disabled = false;
+        button.textContent = "🎯 Position exacte";
+      }
+    }
+
     async function loadAndPlot() {
       const requestVersion = ++loadRequestVersion;
       const tideCacheRequest = getTideCache();
@@ -1371,7 +1454,7 @@
         { maximumFractionDigits: 1 }
       );
 
-      setLastSpotId(spotKey);
+      if (!spot.isExactPosition) setLastSpotId(spotKey);
       updateSpotInfo(spot);
 
       const obsHours = parseInt(document.getElementById("obsHours").value, 10);
@@ -1380,30 +1463,30 @@
       const fcStepHours = parseInt(document.getElementById("fcStep").value, 10);
 
       const windUrl = buildWindUrl(spot.latitude, spot.longitude);
-      const preferredWindUrl = buildPreferredWindUrl(spot);
+      const preferredForecastUrl = buildPreferredForecastUrl(spot);
       const marineUrl = buildMarineUrl(spot.latitude, spot.longitude);
 
-      let data, marine, preferredWind;
+      let data, marine, preferredForecast;
       try {
-        const preferredWindRequest = preferredWindUrl
-          ? fetch(preferredWindUrl, { cache: "no-store" })
+        const preferredForecastRequest = preferredForecastUrl
+          ? fetch(preferredForecastUrl, { cache: "no-store" })
               .then((response) => response.ok ? response.json() : null)
               .catch((error) => {
                 console.warn("Prévision prioritaire indisponible.", error);
                 return null;
               })
           : Promise.resolve(null);
-        const [resWind, resMarine, preferredWindData] = await Promise.all([
+        const [resWind, resMarine, preferredForecastData] = await Promise.all([
           fetch(windUrl, { cache: "no-store" }),
           fetch(marineUrl, { cache: "no-store" }),
-          preferredWindRequest
+          preferredForecastRequest
         ]);
         if (!resWind.ok) {
           throw new Error(`Open-Meteo (${resWind.status})`);
         }
         data = await resWind.json();
         marine = resMarine.ok ? await resMarine.json() : null;
-        preferredWind = preferredWindData;
+        preferredForecast = preferredForecastData;
       } catch (e) {
         if (requestVersion !== loadRequestVersion) return;
         status.textContent = "❌ Erreur réseau : " + e;
@@ -1411,10 +1494,21 @@
         return;
       }
 
-      if (preferredWind?.hourly?.time) {
-        data = mergePreferredWindForecast(data, preferredWind);
-        warnings += "\nℹ️ Vent : AROME-FR 1,3 km prioritaire, puis meilleur modèle disponible.";
-      } else if (preferredWindUrl) {
+      const usesAromePrecipitation = preferredForecast?.hourly?.precipitation
+        ?.some((amount) => Number.isFinite(amount)) ?? false;
+      const aromePrecipitationTimes = new Set(
+        (preferredForecast?.hourly?.time ?? []).filter(
+          (_time, index) => Number.isFinite(
+            preferredForecast?.hourly?.precipitation?.[index]
+          )
+        )
+      );
+      if (preferredForecast?.hourly?.time) {
+        data = mergePreferredForecast(data, preferredForecast);
+        warnings += usesAromePrecipitation
+          ? "\nℹ️ Vent et cumul pluie : AROME-FR 1,3 km prioritaires, puis meilleur modèle disponible."
+          : "\nℹ️ Vent : AROME-FR 1,3 km prioritaire, puis meilleur modèle disponible.";
+      } else if (preferredForecastUrl) {
         warnings += "\n⚠️ AROME-FR 1,3 km indisponible ; meilleur modèle disponible utilisé.";
       }
 
@@ -1448,6 +1542,7 @@
           ? "Mer proche"
           : "Eau";
       const windguruUrl = buildWindguruUrl(spot);
+      const windguruSpotLabel = getWindguruSpotLabel(spot);
 
       /* -------- Vent actuel -------- */
       const vKmh = data.current.wind_speed_10m;
@@ -1469,34 +1564,33 @@
         ? `<br>🌊 ${waterTemperatureLabel} : ${waterTemperature.toFixed(1)} °C`
         : `<br>🌊 Eau : indisponible`;
 
-      const rainNext24Hours = summarizePrecipitationWindow(
+      const nextRainForecast = findNextRainWindow(
         data.hourly?.time ?? [],
         data.hourly?.precipitation_probability ?? [],
         data.hourly?.precipitation ?? [],
         data.current.time,
         24
       );
-      const rainNext24HoursLabel = formatDailyPrecipitation(rainNext24Hours);
+      const nextRainUsesArome = nextRainForecast
+        ? aromePrecipitationTimes.has(nextRainForecast.startTime)
+        : false;
       let currentTideState = null;
 
       function renderCurrentConditions() {
         const extraLines = [
+          `<strong>🌧️ Prochaine pluie :</strong> ` +
+          formatNextRainForecast(nextRainForecast, nextRainUsesArome),
           `<strong>🟢 Prochain créneau vert :</strong> ` +
           formatNextGreenWindow(nextGreenWindow)
         ];
-        if (rainNext24HoursLabel) {
-          extraLines.push(
-            `<strong>🌧️ Pluie 24 h :</strong> ` +
-            rainNext24HoursLabel.replace(" · ", " max · ")
-          );
-        }
 
         const tideLabel = formatCurrentTide(currentTideState, data.current.time);
         if (tideLabel) extraLines.push(tideLabel);
         extraLines.push(
           `<strong>↗ Windguru :</strong> ` +
           `<a href="${windguruUrl}" target="_blank" rel="noopener noreferrer">` +
-          `prévisions de ${spot.nom}</a>`
+          `${spot.isExactPosition ? "fiche officielle proche" : "fiche officielle"} : ` +
+          `${windguruSpotLabel}</a>`
         );
 
         currentDiv.innerHTML = currentHtml + (extraLines.length
@@ -2085,6 +2179,10 @@
       document
         .getElementById("nearMeButton")
         .addEventListener("click", locateNearestSpot);
+
+      document
+        .getElementById("exactPositionButton")
+        .addEventListener("click", locateExactPosition);
 
       document
         .getElementById("tideOverlayButton")

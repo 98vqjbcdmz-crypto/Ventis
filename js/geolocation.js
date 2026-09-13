@@ -20,6 +20,42 @@ export class GeolocationError extends Error {
   }
 }
 
+export const EXACT_POSITION_SPOT_ID = "position-exacte";
+
+export function buildExactPositionSpot(position, nearestSpot) {
+  const latitude = position?.latitude;
+  const longitude = position?.longitude;
+  if (
+    !Number.isFinite(latitude) || latitude < -90 || latitude > 90 ||
+    !Number.isFinite(longitude) || longitude < -180 || longitude > 180
+  ) {
+    throw new TypeError("Coordonnées GPS invalides.");
+  }
+  if (!nearestSpot) {
+    throw new TypeError("Aucun spot Windguru de référence disponible.");
+  }
+
+  return {
+    id: EXACT_POSITION_SPOT_ID,
+    nom: "Ma position exacte",
+    latitude,
+    longitude,
+    region: nearestSpot.region,
+    departement: nearestSpot.departement,
+    pays: nearestSpot.pays,
+    orientationIdeale: [],
+    niveau: null,
+    maree: null,
+    typePlanEau: null,
+    windguruSpotId: nearestSpot.windguruSpotId,
+    windguruSpotName: nearestSpot.windguruSpotName ?? nearestSpot.nom,
+    windguruReferenceDistanceKm: nearestSpot.distanceKm,
+    accuracyM: Number.isFinite(position.accuracy) ? position.accuracy : null,
+    isExactPosition: true,
+    tags: ["GPS"]
+  };
+}
+
 function normalizeError(error) {
   const reasonsByCode = {
     1: "denied",

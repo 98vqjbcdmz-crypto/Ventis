@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 import { sortSpotsByDistance } from "../js/distance.js";
-import { buildPreferredWindUrl } from "../js/forecast.js";
+import { buildPreferredForecastUrl } from "../js/forecast.js";
 import { loadSpots, validateSpots } from "../js/spots.js";
 
 const spotsUrl = new URL("../data/spots.json", import.meta.url);
@@ -13,14 +13,17 @@ test("la base contient des spots valides et uniques", async () => {
 
   assert.equal(validateSpots(spots), spots);
   assert.equal(new Set(spots.map((spot) => spot.id)).size, spots.length);
-  spots.forEach((spot) => assert.ok(Number.isInteger(spot.windguruSpotId)));
+  spots.forEach((spot) => {
+    assert.ok(Number.isInteger(spot.windguruSpotId));
+    assert.ok(spot.windguruSpotName, spot.id);
+  });
 });
 
 test("AROME France HD est prioritaire sur tous les spots", async () => {
   const spots = JSON.parse(await readFile(spotsUrl, "utf8"));
 
   spots.forEach((spot) => {
-    const url = new URL(buildPreferredWindUrl(spot));
+    const url = new URL(buildPreferredForecastUrl(spot));
     assert.equal(
       url.searchParams.get("models"),
       "meteofrance_arome_france_hd",
@@ -55,6 +58,23 @@ test("la base permet de rechercher le spot de Leucate", async () => {
   assert.equal(leucate?.nom, "Leucate – Le Goulet");
   assert.equal(leucate?.departement, "Aude");
   assert.ok(leucate?.tags.includes("Leucate"));
+  assert.equal(leucate?.windguruSpotId, 500989);
+});
+
+test("les spots méditerranéens utilisent les fiches publiques Windguru", async () => {
+  const spots = JSON.parse(await readFile(spotsUrl, "utf8"));
+  const byId = Object.fromEntries(spots.map((spot) => [spot.id, spot]));
+
+  assert.deepEqual(
+    ["ponant", "plageSud", "travers"].map(
+      (id) => byId[id].windguruSpotId
+    ),
+    [48600, 48600, 48600]
+  );
+  assert.equal(byId.aresquiers.windguruSpotId, 500982);
+  assert.equal(byId["leucate-le-goulet"].windguruSpotId, 500989);
+  ["ponant", "plageSud", "travers", "aresquiers", "leucate-le-goulet"]
+    .forEach((id) => assert.ok(byId[id].windguruSpotName));
 });
 
 test("la base couvre les spots autour d'Arcachon", async () => {
@@ -102,6 +122,7 @@ test("les métadonnées facultatives des spots sont validées", () => {
     region: "Nouvelle-Aquitaine",
     pays: "France",
     windguruSpotId: 12345,
+    windguruSpotName: "Spot public test",
     ecole: {
       nom: "École test",
       url: "https://example.com/ecole"
@@ -121,6 +142,10 @@ test("les métadonnées facultatives des spots sont validées", () => {
     }]),
     /école invalide/
   );
+  assert.throws(
+    () => validateSpots([{ ...validSpot, windguruSpotName: "" }]),
+    /nom de fiche Windguru invalide/
+  );
 });
 
 test("le chargement de la base contourne le cache du navigateur", async () => {
@@ -132,7 +157,8 @@ test("le chargement de la base contourne le cache du navigateur", async () => {
     longitude: -1,
     region: "Normandie",
     pays: "France",
-    windguruSpotId: 12345
+    windguruSpotId: 12345,
+    windguruSpotName: "Spot public test"
   }];
 
   const loadedSpots = await loadSpots((url, options) => {
