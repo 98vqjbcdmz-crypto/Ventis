@@ -65,11 +65,11 @@ test("les spots méditerranéens utilisent les fiches publiques Windguru", async
   const spots = JSON.parse(await readFile(spotsUrl, "utf8"));
   const byId = Object.fromEntries(spots.map((spot) => [spot.id, spot]));
 
+  assert.equal(byId.ponant.windguruSpotId, 501002);
+  assert.equal(byId.ponant.windguruSpotName, "Étang du Ponant");
   assert.deepEqual(
-    ["ponant", "plageSud", "travers"].map(
-      (id) => byId[id].windguruSpotId
-    ),
-    [48600, 48600, 48600]
+    ["plageSud", "travers"].map((id) => byId[id].windguruSpotId),
+    [48600, 48600]
   );
   assert.equal(byId.aresquiers.windguruSpotId, 500982);
   assert.equal(byId["leucate-le-goulet"].windguruSpotId, 500989);
