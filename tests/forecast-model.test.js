@@ -4,10 +4,18 @@ import test from "node:test";
 import {
   AROME_FRANCE_HD_MODEL,
   buildPreferredForecastUrl,
+  buildWindUrl,
   buildWindguruUrl,
   getWindguruSpotLabel,
   mergePreferredForecast
 } from "../js/forecast.js";
+
+test("la prévision générale demande le coucher du soleil", () => {
+  const url = new URL(buildWindUrl(43.56, 4.11));
+
+  assert.equal(url.searchParams.get("daily"), "sunset");
+  assert.equal(url.searchParams.get("timezone"), "Europe/Paris");
+});
 
 test("la requête prioritaire sélectionne AROME France HD", () => {
   const url = new URL(buildPreferredForecastUrl({

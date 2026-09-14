@@ -38,6 +38,9 @@ test("les prévisions n'utilisent pas le niveau marin MSL comme hauteur de maré
   assert.match(html, /summarizeDailyPrecipitation/);
   assert.match(html, /precipitationByDay/);
   assert.match(html, /Prochaine pluie/);
+  assert.match(html, /Fin de journée/);
+  assert.match(html, /formatDaylightDeparture/);
+  assert.match(html, /js\/daylight\.js\?v=1/);
   assert.match(html, /id="exactPositionButton"/);
   assert.match(html, /buildExactPositionSpot/);
   assert.match(html, /cell_selection=sea/);

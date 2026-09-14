@@ -31,6 +31,7 @@ export function buildWindUrl(lat, lon, model = null) {
       "precipitation_probability",
       "precipitation"
     ].join(","),
+    daily: "sunset",
     timezone: "Europe/Paris"
   });
 

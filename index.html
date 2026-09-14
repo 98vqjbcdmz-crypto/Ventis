@@ -651,6 +651,10 @@
 
   <script type="module">
     import { dismissTooltipOnClickPlugin } from "./js/chart-interactions.js?v=4";
+    import {
+      formatDaylightDeparture,
+      getCurrentDaylightTimes
+    } from "./js/daylight.js?v=1";
     import { formatDistance, sortSpotsByDistance } from "./js/distance.js";
     import {
       buildExactPositionSpot,
@@ -663,7 +667,7 @@
       buildWindUrl,
       getWindguruSpotLabel,
       mergePreferredForecast
-    } from "./js/forecast.js?v=2";
+    } from "./js/forecast.js?v=3";
     import {
       findNextRainWindow,
       formatDailyPrecipitation,
@@ -1532,6 +1536,11 @@
         hourlyWindKt,
         data.current.time
       );
+      const daylight = getCurrentDaylightTimes(
+        data.daily,
+        data.current.time,
+        spot.latitude
+      );
       const waterTemperature = getCurrentWaterTemperature(
         marine,
         data.current.time,
@@ -1578,6 +1587,8 @@
 
       function renderCurrentConditions() {
         const extraLines = [
+          `<strong>🌇 Fin de journée :</strong> ` +
+          formatDaylightDeparture(daylight, data.current.time),
           `<strong>🌧️ Prochaine pluie :</strong> ` +
           formatNextRainForecast(nextRainForecast, nextRainUsesArome),
           `<strong>🟢 Prochain créneau vert :</strong> ` +
